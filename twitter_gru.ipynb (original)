@@ -1,0 +1,3179 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "# Natural Language Processing\n",
+    "\n",
+    "based on work by Magnus Pederson"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Imports"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 157,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%matplotlib inline\n",
+    "import matplotlib.pyplot as plt\n",
+    "import tensorflow as tf\n",
+    "import numpy as np\n",
+    "from scipy.spatial.distance import cdist\n",
+    "import pandas as pd\n",
+    "import sklearn\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "import math as math"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We need to import several things from Keras."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 158,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from tensorflow.keras.models import Sequential, save_model, load_model\n",
+    "from tensorflow.keras.layers import Dense, GRU, Embedding, Flatten\n",
+    "from tensorflow.keras.optimizers import Adam, Ftrl, Adamax\n",
+    "from tensorflow.keras.preprocessing.text import Tokenizer\n",
+    "from tensorflow.keras.preprocessing.sequence import pad_sequences\n",
+    "from keras.callbacks import EarlyStopping\n",
+    "from keras.callbacks import ModelCheckpoint\n",
+    "from keras.callbacks import CSVLogger\n",
+    "from keras.callbacks import ReduceLROnPlateau\n",
+    "from keras.callbacks import TensorBoard\n",
+    "from keras.callbacks import LambdaCallback\n",
+    " "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This was developed using Python 3.6 (Anaconda) and package versions:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 159,
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'2.3.1'"
+      ]
+     },
+     "execution_count": 159,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tf.__version__"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 160,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'2.4.0'"
+      ]
+     },
+     "execution_count": 160,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tf.keras.__version__"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Load Data\n",
+    "\n",
+    "For Training use the twitter data set with sentiment analysis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 161,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(385042, 6)\n",
+      "   Unnamed: 0          TWID       NEG       NEU       POS  \\\n",
+      "0           0  7.680000e+17  0.049398  0.861395  0.089207   \n",
+      "1           1  7.680000e+17  0.006598  0.046810  0.946591   \n",
+      "2           2  7.680000e+17  0.032333  0.850945  0.116722   \n",
+      "3           3  7.680000e+17  0.008090  0.042331  0.949579   \n",
+      "4           4  7.680000e+17  0.009325  0.940488  0.050187   \n",
+      "\n",
+      "                                                text  \n",
+      "0  #Incredible #India #Atulya #Bharat - Land of S...  \n",
+      "1  RT @KendallHuntRPD: The #firstdayofschool for ...  \n",
+      "2  RT @abbiesf_: Kate wrights figure is all I wan...  \n",
+      "3  Josh Jenkins is looking forward to TAB Breeder...  \n",
+      "4  Robert Pattinson Gets Ready to Hop on a Plane ...  \n"
+     ]
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "\n",
+    "file = '/Users/mutecypher/Documents/UW_work/GitHub/twitter-project/twitter-project/twitter_sentiment_learn.csv'\n",
+    "\n",
+    "learning_df = pd.read_csv(file)\n",
+    "print(learning_df.shape)\n",
+    "print(learning_df.head())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Change this if you want the files saved in another directory."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Load the training- and test-sets."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 162,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x = learning_df['text'].to_list()\n",
+    "\n",
+    "y = learning_df[[\"NEG\", \"NEU\", \"POS\"]]\n",
+    "\n",
+    "##learning_df['rate'] = 0\n",
+    "\n",
+    "##for j in range(learning_df.shape[0]):\n",
+    "##    if (learning_df.loc[j,'NEG'] > learning_df.loc[j,'NEU']) &  (learning_df.loc[j,'NEG'] > learning_df.loc[j,'POS']):\n",
+    "##        learning_df.loc[j,'rate'] = -1\n",
+    "##    if (learning_df.loc[j,'NEU'] > learning_df.loc[j,'NEG']) & (learning_df.loc[j,'NEU'] > learning_df.loc[j,'POS']):\n",
+    "##        learning_df.loc[j, 'rate'] = 0\n",
+    "##    else:\n",
+    "##        learning_df.loc[j, 'rate'] = 1\n",
+    "\n",
+    "##y = learning_df[[\"rate\"]]\n",
+    "\n",
+    "##y = learning_df[[\"NEG\", \"NEU\", \"POS\", \"rate\"]]\n",
+    "\n",
+    "\n",
+    "x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.25)\n",
+    "\n",
+    "# Convert to numpy arrays.\n",
+    "y_train = np.array(y_train)\n",
+    "y_test = np.array(y_test)\n",
+    "##print(x[1])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 163,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Train-set size:  288781\n",
+      "Test-set size:   96261\n"
+     ]
+    }
+   ],
+   "source": [
+    "\n",
+    "print(\"Train-set size: \", len(x_train))\n",
+    "print(\"Test-set size:  \", len(x_test))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Combine into one data-set for some uses below."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 164,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data_text = x_train + x_test"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Print an example from the training-set to see that the data looks correct."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 165,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      " RT @ESPNNBA: 5 titles.33,643 career points.1,346 games.20 years.1 Mamba. https://t.co/AxoXkh63eQ\n",
+      "\n",
+      "    Unnamed: 0          TWID       NEG       NEU       POS  \\\n",
+      "0           0  7.680000e+17  0.049398  0.861395  0.089207   \n",
+      "1           1  7.680000e+17  0.006598  0.046810  0.946591   \n",
+      "2           2  7.680000e+17  0.032333  0.850945  0.116722   \n",
+      "3           3  7.680000e+17  0.008090  0.042331  0.949579   \n",
+      "4           4  7.680000e+17  0.009325  0.940488  0.050187   \n",
+      "\n",
+      "                                                text  \n",
+      "0  #Incredible #India #Atulya #Bharat - Land of S...  \n",
+      "1  RT @KendallHuntRPD: The #firstdayofschool for ...  \n",
+      "2  RT @abbiesf_: Kate wrights figure is all I wan...  \n",
+      "3  Josh Jenkins is looking forward to TAB Breeder...  \n",
+      "4  Robert Pattinson Gets Ready to Hop on a Plane ...  \n",
+      "\n",
+      " [[0.01181551 0.86550825 0.12267624]\n",
+      " [0.02624732 0.86519176 0.10856092]\n",
+      " [0.06471042 0.87579343 0.05949616]\n",
+      " [0.02030587 0.88860942 0.09108472]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"\\n\", x_train[1])\n",
+    "print(\"\\n\", learning_df.head())\n",
+    "print(\"\\n\", y_train[1:5])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The true \"class\" is a sentiment of the movie-review. It is a value of 0.0 for a negative sentiment and 1.0 for a positive sentiment. In this case the review is positive."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 166,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.01181551, 0.86550825, 0.12267624])"
+      ]
+     },
+     "execution_count": 166,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "y_train[1]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Tokenizer\n",
+    "\n",
+    "A neural network cannot work directly on text-strings so we must convert it somehow. There are two steps in this conversion, the first step is called the \"tokenizer\" which converts words to integers and is done on the data-set before it is input to the neural network. The second step is an integrated part of the neural network itself and is called the \"embedding\"-layer, which is described further below.\n",
+    "\n",
+    "We may instruct the tokenizer to only use e.g. the 10000 most popular words from the data-set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 167,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_words = 30000"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 168,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "tokenizer = Tokenizer(num_words=num_words)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The tokenizer can then be \"fitted\" to the data-set. This scans through all the text and strips it from unwanted characters such as punctuation, and also converts it to lower-case characters. The tokenizer then builds a vocabulary of all unique words along with various data-structures for accessing the data.\n",
+    "\n",
+    "Note that we fit the tokenizer on the entire data-set so it gathers words from both the training- and test-data. This is OK as we are merely building a vocabulary and want it to be as complete as possible. The actual neural network will of course only be trained on the training-set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 169,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 13.2 s, sys: 567 ms, total: 13.7 s\n",
+      "Wall time: 15.2 s\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%time\n",
+    "tokenizer.fit_on_texts(data_text)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If you want to use the entire vocabulary then set `num_words=None` above, and then it will automatically be set to the vocabulary-size here. (This is because of Keras' somewhat awkward implementation.)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 170,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "30000\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(num_words)\n",
+    "if num_words is None:\n",
+    "    num_words = len(tokenizer.word_index)\n",
+    "    print(\"the num_words is \", num_words)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can then inspect the vocabulary that has been gathered by the tokenizer. This is ordered by the number of occurrences of the words in the data-set. These integer-numbers are called word indices or \"tokens\" because they uniquely identify each word in the vocabulary."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 171,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'https': 1,\n",
+       " 't': 2,\n",
+       " 'co': 3,\n",
+       " 'rt': 4,\n",
+       " 'the': 5,\n",
+       " 'to': 6,\n",
+       " 'a': 7,\n",
+       " 'of': 8,\n",
+       " 'in': 9,\n",
+       " 'for': 10,\n",
+       " 'and': 11,\n",
+       " 'you': 12,\n",
+       " 'on': 13,\n",
+       " 'is': 14,\n",
+       " 'this': 15,\n",
+       " 'i': 16,\n",
+       " 'at': 17,\n",
+       " 'with': 18,\n",
+       " '…': 19,\n",
+       " 'amp': 20,\n",
+       " 'my': 21,\n",
+       " 'your': 22,\n",
+       " 'new': 23,\n",
+       " 'so': 24,\n",
+       " 'love': 25,\n",
+       " 'by': 26,\n",
+       " 'me': 27,\n",
+       " 'from': 28,\n",
+       " 'happy': 29,\n",
+       " 'are': 30,\n",
+       " 'it': 31,\n",
+       " 'be': 32,\n",
+       " 'when': 33,\n",
+       " 'have': 34,\n",
+       " 'our': 35,\n",
+       " 'all': 36,\n",
+       " 'out': 37,\n",
+       " 'we': 38,\n",
+       " 'day': 39,\n",
+       " 'now': 40,\n",
+       " 'good': 41,\n",
+       " 'that': 42,\n",
+       " 'up': 43,\n",
+       " 'today': 44,\n",
+       " 'get': 45,\n",
+       " 'great': 46,\n",
+       " 'just': 47,\n",
+       " 'how': 48,\n",
+       " 'one': 49,\n",
+       " 'will': 50,\n",
+       " 'like': 51,\n",
+       " 'what': 52,\n",
+       " 'best': 53,\n",
+       " 'as': 54,\n",
+       " 'here': 55,\n",
+       " 'was': 56,\n",
+       " 'more': 57,\n",
+       " '2': 58,\n",
+       " '1': 59,\n",
+       " 'do': 60,\n",
+       " 'an': 61,\n",
+       " 'free': 62,\n",
+       " 'about': 63,\n",
+       " 'found': 64,\n",
+       " 'but': 65,\n",
+       " 'birthday': 66,\n",
+       " 'who': 67,\n",
+       " 'see': 68,\n",
+       " 'us': 69,\n",
+       " 'can': 70,\n",
+       " 'if': 71,\n",
+       " 'his': 72,\n",
+       " 'time': 73,\n",
+       " 'join': 74,\n",
+       " 'thank': 75,\n",
+       " 'has': 76,\n",
+       " \"i'm\": 77,\n",
+       " 'amazing': 78,\n",
+       " 'win': 79,\n",
+       " 'look': 80,\n",
+       " \"it's\": 81,\n",
+       " 'her': 82,\n",
+       " 'beautiful': 83,\n",
+       " 'u': 84,\n",
+       " 'first': 85,\n",
+       " 'snail': 86,\n",
+       " 'transponder': 87,\n",
+       " 'trecru': 88,\n",
+       " '3': 89,\n",
+       " 'he': 90,\n",
+       " '2016': 91,\n",
+       " 'back': 92,\n",
+       " '5': 93,\n",
+       " 'go': 94,\n",
+       " 'https…': 95,\n",
+       " 'not': 96,\n",
+       " 'follow': 97,\n",
+       " 't…': 98,\n",
+       " 'gt': 99,\n",
+       " '4': 100,\n",
+       " 'http…': 101,\n",
+       " 'their': 102,\n",
+       " 'live': 103,\n",
+       " 'via': 104,\n",
+       " 'these': 105,\n",
+       " 'people': 106,\n",
+       " 'thanks': 107,\n",
+       " 'they': 108,\n",
+       " 'watch': 109,\n",
+       " '10': 110,\n",
+       " 'much': 111,\n",
+       " 'year': 112,\n",
+       " 'life': 113,\n",
+       " 'night': 114,\n",
+       " 'no': 115,\n",
+       " 'some': 116,\n",
+       " 'make': 117,\n",
+       " 'after': 118,\n",
+       " 'black': 119,\n",
+       " 'c…': 120,\n",
+       " 'fun': 121,\n",
+       " 'or': 122,\n",
+       " 'check': 123,\n",
+       " 'htt…': 124,\n",
+       " 'only': 125,\n",
+       " 'over': 126,\n",
+       " 'know': 127,\n",
+       " 'want': 128,\n",
+       " 'tonight': 129,\n",
+       " 'been': 130,\n",
+       " 'trump': 131,\n",
+       " 'got': 132,\n",
+       " 'world': 133,\n",
+       " 'years': 134,\n",
+       " \"you're\": 135,\n",
+       " 'video': 136,\n",
+       " 'most': 137,\n",
+       " 'last': 138,\n",
+       " '8': 139,\n",
+       " 'take': 140,\n",
+       " 'photo': 141,\n",
+       " 'school': 142,\n",
+       " 'game': 143,\n",
+       " 'she': 144,\n",
+       " 'home': 145,\n",
+       " 'team': 146,\n",
+       " 'week': 147,\n",
+       " \"don't\": 148,\n",
+       " 'co…': 149,\n",
+       " 'need': 150,\n",
+       " 'show': 151,\n",
+       " '7': 152,\n",
+       " 'off': 153,\n",
+       " \"can't\": 154,\n",
+       " 'other': 155,\n",
+       " 'why': 156,\n",
+       " 'w': 157,\n",
+       " 'them': 158,\n",
+       " 'music': 159,\n",
+       " 'please': 160,\n",
+       " 'come': 161,\n",
+       " 'ht…': 162,\n",
+       " 'vs': 163,\n",
+       " 'ever': 164,\n",
+       " 'twitter': 165,\n",
+       " 'every': 166,\n",
+       " '6': 167,\n",
+       " 'set': 168,\n",
+       " 'start': 169,\n",
+       " 'work': 170,\n",
+       " 'him': 171,\n",
+       " 'man': 172,\n",
+       " 'art': 173,\n",
+       " 'very': 174,\n",
+       " 'morning': 175,\n",
+       " 'going': 176,\n",
+       " 'really': 177,\n",
+       " 'into': 178,\n",
+       " 'everyone': 179,\n",
+       " 'news': 180,\n",
+       " 'next': 181,\n",
+       " 'always': 182,\n",
+       " 'two': 183,\n",
+       " 'help': 184,\n",
+       " 'way': 185,\n",
+       " 'being': 186,\n",
+       " 'where': 187,\n",
+       " 'hope': 188,\n",
+       " 'had': 189,\n",
+       " 'still': 190,\n",
+       " 'book': 191,\n",
+       " 'made': 192,\n",
+       " 'find': 193,\n",
+       " 'retweet': 194,\n",
+       " 'did': 195,\n",
+       " 'cute': 196,\n",
+       " 'read': 197,\n",
+       " 'real': 198,\n",
+       " 'too': 199,\n",
+       " 'sea': 200,\n",
+       " 'white': 201,\n",
+       " 'update': 202,\n",
+       " 'play': 203,\n",
+       " '9': 204,\n",
+       " 'than': 205,\n",
+       " 'friends': 206,\n",
+       " 'girl': 207,\n",
+       " 'guys': 208,\n",
+       " 'nationaldogday': 209,\n",
+       " 'looking': 210,\n",
+       " 'top': 211,\n",
+       " 'there': 212,\n",
+       " 'looks': 213,\n",
+       " 'tomorrow': 214,\n",
+       " 'friday': 215,\n",
+       " 'business': 216,\n",
+       " 'miss': 217,\n",
+       " 'were': 218,\n",
+       " 'weekend': 219,\n",
+       " 'big': 220,\n",
+       " 'someone': 221,\n",
+       " 'photos': 222,\n",
+       " 'x': 223,\n",
+       " 'again': 224,\n",
+       " '❤️': 225,\n",
+       " 'old': 226,\n",
+       " 'little': 227,\n",
+       " 'dog': 228,\n",
+       " 'wait': 229,\n",
+       " 'am': 230,\n",
+       " 'high': 231,\n",
+       " 'coming': 232,\n",
+       " 'full': 233,\n",
+       " 'excited': 234,\n",
+       " 's': 235,\n",
+       " 'official': 236,\n",
+       " 'august': 237,\n",
+       " 'young': 238,\n",
+       " '–': 239,\n",
+       " 'nice': 240,\n",
+       " 'think': 241,\n",
+       " 'luck': 242,\n",
+       " 'proud': 243,\n",
+       " 'days': 244,\n",
+       " 'its': 245,\n",
+       " 'class': 246,\n",
+       " 'summer': 247,\n",
+       " 'must': 248,\n",
+       " 'party': 249,\n",
+       " 'before': 250,\n",
+       " 'would': 251,\n",
+       " 'right': 252,\n",
+       " 'movie': 253,\n",
+       " 'never': 254,\n",
+       " 'things': 255,\n",
+       " 'ready': 256,\n",
+       " 'city': 257,\n",
+       " 'giants': 258,\n",
+       " 'season': 259,\n",
+       " 'ur': 260,\n",
+       " 'friend': 261,\n",
+       " 'app': 262,\n",
+       " '16': 263,\n",
+       " 'say': 264,\n",
+       " 'meet': 265,\n",
+       " '100': 266,\n",
+       " 'pic': 267,\n",
+       " 'women': 268,\n",
+       " 'perfect': 269,\n",
+       " '12': 270,\n",
+       " 'vote': 271,\n",
+       " 'down': 272,\n",
+       " 'awesome': 273,\n",
+       " 'another': 274,\n",
+       " 'support': 275,\n",
+       " '😍': 276,\n",
+       " \"we're\": 277,\n",
+       " 'should': 278,\n",
+       " 'monsters': 279,\n",
+       " 'enjoy': 280,\n",
+       " 'could': 281,\n",
+       " 'encounters': 282,\n",
+       " 'house': 283,\n",
+       " 'post': 284,\n",
+       " '11': 285,\n",
+       " 'football': 286,\n",
+       " '0': 287,\n",
+       " 'cover': 288,\n",
+       " 'bigolive': 289,\n",
+       " \"here's\": 290,\n",
+       " 'girls': 291,\n",
+       " 'god': 292,\n",
+       " 'family': 293,\n",
+       " 'use': 294,\n",
+       " 'through': 295,\n",
+       " 'picture': 296,\n",
+       " 'well': 297,\n",
+       " 'sign': 298,\n",
+       " 'better': 299,\n",
+       " 'streaming': 300,\n",
+       " 'online': 301,\n",
+       " '😂': 302,\n",
+       " 'says': 303,\n",
+       " 'baby': 304,\n",
+       " 'clinton': 305,\n",
+       " 'h…': 306,\n",
+       " 'many': 307,\n",
+       " 'special': 308,\n",
+       " '30': 309,\n",
+       " 'instagram': 310,\n",
+       " 'heart': 311,\n",
+       " 'enter': 312,\n",
+       " 'getting': 313,\n",
+       " '20': 314,\n",
+       " 'click': 315,\n",
+       " 'im': 316,\n",
+       " 'exo': 317,\n",
+       " 'open': 318,\n",
+       " 'tickets': 319,\n",
+       " 'national': 320,\n",
+       " 'case': 321,\n",
+       " 'red': 322,\n",
+       " '25': 323,\n",
+       " 'star': 324,\n",
+       " 'info': 325,\n",
+       " 'cool': 326,\n",
+       " 'blue': 327,\n",
+       " 'park': 328,\n",
+       " 'chance': 329,\n",
+       " 'm': 330,\n",
+       " 'sale': 331,\n",
+       " 'story': 332,\n",
+       " 'call': 333,\n",
+       " 'hillary': 334,\n",
+       " 'travel': 335,\n",
+       " 'exclusive': 336,\n",
+       " 'keep': 337,\n",
+       " 'making': 338,\n",
+       " 'invite': 339,\n",
+       " 'giveaway': 340,\n",
+       " '24': 341,\n",
+       " 'itsfoodporn': 342,\n",
+       " 'thing': 343,\n",
+       " 'fans': 344,\n",
+       " 'long': 345,\n",
+       " 'makes': 346,\n",
+       " 'album': 347,\n",
+       " 'september': 348,\n",
+       " \"let's\": 349,\n",
+       " 'something': 350,\n",
+       " 'soon': 351,\n",
+       " '1st': 352,\n",
+       " 'may': 353,\n",
+       " 'part': 354,\n",
+       " 'end': 355,\n",
+       " 'done': 356,\n",
+       " 'then': 357,\n",
+       " 'food': 358,\n",
+       " 'everything': 359,\n",
+       " 'sweet': 360,\n",
+       " 'uk': 361,\n",
+       " 'give': 362,\n",
+       " '15': 363,\n",
+       " 'visit': 364,\n",
+       " 'final': 365,\n",
+       " 'because': 366,\n",
+       " 'money': 367,\n",
+       " 'games': 368,\n",
+       " \"he's\": 369,\n",
+       " 'fashion': 370,\n",
+       " 'd': 371,\n",
+       " 'pics': 372,\n",
+       " 'list': 373,\n",
+       " 'available': 374,\n",
+       " 'together': 375,\n",
+       " 'health': 376,\n",
+       " 'stop': 377,\n",
+       " \"i've\": 378,\n",
+       " 'apple': 379,\n",
+       " 'tell': 380,\n",
+       " 'even': 381,\n",
+       " 'hot': 382,\n",
+       " 'nct': 383,\n",
+       " \"i'll\": 384,\n",
+       " 'group': 385,\n",
+       " 'tour': 386,\n",
+       " 'which': 387,\n",
+       " 'away': 388,\n",
+       " 'congrats': 389,\n",
+       " 'fall': 390,\n",
+       " 'download': 391,\n",
+       " 'http': 392,\n",
+       " 'until': 393,\n",
+       " 'facebook': 394,\n",
+       " 'latest': 395,\n",
+       " 'buy': 396,\n",
+       " 'welcome': 397,\n",
+       " 'finally': 398,\n",
+       " 'tweet': 399,\n",
+       " 'iphone': 400,\n",
+       " '000': 401,\n",
+       " 'kids': 402,\n",
+       " 'talk': 403,\n",
+       " 'harry': 404,\n",
+       " '50': 405,\n",
+       " 'face': 406,\n",
+       " 'feel': 407,\n",
+       " 'share': 408,\n",
+       " 'la': 409,\n",
+       " 'while': 410,\n",
+       " 'italy': 411,\n",
+       " 'gets': 412,\n",
+       " 'saturday': 413,\n",
+       " 'place': 414,\n",
+       " 'song': 415,\n",
+       " 'event': 416,\n",
+       " 'seen': 417,\n",
+       " 'marketing': 418,\n",
+       " 'air': 419,\n",
+       " 'size': 420,\n",
+       " 'having': 421,\n",
+       " 'deals': 422,\n",
+       " 'those': 423,\n",
+       " 'also': 424,\n",
+       " 'pictures': 425,\n",
+       " 'behind': 426,\n",
+       " 'any': 427,\n",
+       " 'since': 428,\n",
+       " 'left': 429,\n",
+       " 'vintage': 430,\n",
+       " 'using': 431,\n",
+       " 'around': 432,\n",
+       " 'lovely': 433,\n",
+       " 'b': 434,\n",
+       " 'own': 435,\n",
+       " 'favorite': 436,\n",
+       " 'listen': 437,\n",
+       " 'media': 438,\n",
+       " 'cr': 439,\n",
+       " 'said': 440,\n",
+       " 'fan': 441,\n",
+       " 'stage': 442,\n",
+       " 'ago': 443,\n",
+       " 'lot': 444,\n",
+       " 'following': 445,\n",
+       " 'car': 446,\n",
+       " 'remember': 447,\n",
+       " 'state': 448,\n",
+       " 'beach': 449,\n",
+       " 'shoes': 450,\n",
+       " 'silver': 451,\n",
+       " 'mainedcm': 452,\n",
+       " 'during': 453,\n",
+       " '😭': 454,\n",
+       " 'boys': 455,\n",
+       " 'social': 456,\n",
+       " 'boy': 457,\n",
+       " 'v': 458,\n",
+       " 'shirt': 459,\n",
+       " 'against': 460,\n",
+       " 'usa': 461,\n",
+       " 'doing': 462,\n",
+       " 'person': 463,\n",
+       " 'gold': 464,\n",
+       " 'gurmeetramrahim': 465,\n",
+       " 'congratulations': 466,\n",
+       " 'college': 467,\n",
+       " 'let': 468,\n",
+       " 'learn': 469,\n",
+       " 'wow': 470,\n",
+       " 'pushawardskathniels': 471,\n",
+       " 'photography': 472,\n",
+       " 'job': 473,\n",
+       " 'r': 474,\n",
+       " 'oh': 475,\n",
+       " 'design': 476,\n",
+       " 'n': 477,\n",
+       " 'realdonaldtrump': 478,\n",
+       " 'tips': 479,\n",
+       " 'pretty': 480,\n",
+       " 'such': 481,\n",
+       " 'london': 482,\n",
+       " 'box': 483,\n",
+       " 'dream': 484,\n",
+       " 'league': 485,\n",
+       " '26': 486,\n",
+       " 'club': 487,\n",
+       " 'local': 488,\n",
+       " 'brand': 489,\n",
+       " 'working': 490,\n",
+       " 'both': 491,\n",
+       " 'name': 492,\n",
+       " 'forget': 493,\n",
+       " 'super': 494,\n",
+       " 'wedding': 495,\n",
+       " 'same': 496,\n",
+       " 'aug': 497,\n",
+       " 'sports': 498,\n",
+       " 'snapchat': 499,\n",
+       " 'bad': 500,\n",
+       " 'competition': 501,\n",
+       " 'date': 502,\n",
+       " 'inside': 503,\n",
+       " 'students': 504,\n",
+       " 'mr': 505,\n",
+       " 'hair': 506,\n",
+       " 'pm': 507,\n",
+       " 'playing': 508,\n",
+       " \"that's\": 509,\n",
+       " 'e': 510,\n",
+       " 'america': 511,\n",
+       " 'blog': 512,\n",
+       " 'o': 513,\n",
+       " 'girlposts': 514,\n",
+       " 'c': 515,\n",
+       " 'gift': 516,\n",
+       " 'green': 517,\n",
+       " 'bank': 518,\n",
+       " 'series': 519,\n",
+       " 'senior': 520,\n",
+       " 'under': 521,\n",
+       " 'mom': 522,\n",
+       " '😊': 523,\n",
+       " 'winner': 524,\n",
+       " 'hard': 525,\n",
+       " 'wear': 526,\n",
+       " 'email': 527,\n",
+       " \"y'all\": 528,\n",
+       " 'view': 529,\n",
+       " 'light': 530,\n",
+       " 'k': 531,\n",
+       " 'wanna': 532,\n",
+       " 'line': 533,\n",
+       " 'tv': 534,\n",
+       " 'watching': 535,\n",
+       " 'month': 536,\n",
+       " 'earthquake': 537,\n",
+       " 'hit': 538,\n",
+       " '17': 539,\n",
+       " 'stay': 540,\n",
+       " 'office': 541,\n",
+       " 'faces': 542,\n",
+       " 'french': 543,\n",
+       " 'hours': 544,\n",
+       " \"today's\": 545,\n",
+       " 'woman': 546,\n",
+       " 'try': 547,\n",
+       " 'change': 548,\n",
+       " 'preview': 549,\n",
+       " 'king': 550,\n",
+       " 'beauty': 551,\n",
+       " 'ask': 552,\n",
+       " 'smile': 553,\n",
+       " 'put': 554,\n",
+       " 'yesterday': 555,\n",
+       " 'style': 556,\n",
+       " 'harmony': 557,\n",
+       " 'fifth': 558,\n",
+       " 'books': 559,\n",
+       " 'guy': 560,\n",
+       " 'small': 561,\n",
+       " 'store': 562,\n",
+       " 'water': 563,\n",
+       " 'power': 564,\n",
+       " 'million': 565,\n",
+       " 'episode': 566,\n",
+       " 'hand': 567,\n",
+       " 'wish': 568,\n",
+       " 'donald': 569,\n",
+       " 'sept': 570,\n",
+       " 'lt': 571,\n",
+       " 'times': 572,\n",
+       " 'training': 573,\n",
+       " 'gotta': 574,\n",
+       " 'ft': 575,\n",
+       " 'save': 576,\n",
+       " 'sure': 577,\n",
+       " 'fuck': 578,\n",
+       " 'giving': 579,\n",
+       " 'true': 580,\n",
+       " 'gorgeous': 581,\n",
+       " 'police': 582,\n",
+       " 'comes': 583,\n",
+       " 'future': 584,\n",
+       " 'west': 585,\n",
+       " 'ig': 586,\n",
+       " 'shots': 587,\n",
+       " 'link': 588,\n",
+       " 'yourself': 589,\n",
+       " 'service': 590,\n",
+       " 'road': 591,\n",
+       " '💕': 592,\n",
+       " 'goals': 593,\n",
+       " 'meeting': 594,\n",
+       " 'fire': 595,\n",
+       " 'release': 596,\n",
+       " 'hey': 597,\n",
+       " 'hi': 598,\n",
+       " 'details': 599,\n",
+       " 'edition': 600,\n",
+       " 'players': 601,\n",
+       " 'attack': 602,\n",
+       " 'digital': 603,\n",
+       " 'hate': 604,\n",
+       " 'f': 605,\n",
+       " 'october': 606,\n",
+       " 'j': 607,\n",
+       " 'funny': 608,\n",
+       " '18': 609,\n",
+       " 'wonderful': 610,\n",
+       " 'three': 611,\n",
+       " 'run': 612,\n",
+       " 'few': 613,\n",
+       " '14': 614,\n",
+       " 'cream': 615,\n",
+       " 'market': 616,\n",
+       " 'lol': 617,\n",
+       " 'history': 618,\n",
+       " 'account': 619,\n",
+       " 'card': 620,\n",
+       " 'town': 621,\n",
+       " '00': 622,\n",
+       " 'room': 623,\n",
+       " 'james': 624,\n",
+       " 'phone': 625,\n",
+       " 'head': 626,\n",
+       " 'india': 627,\n",
+       " 'does': 628,\n",
+       " 'anyone': 629,\n",
+       " 'took': 630,\n",
+       " 'collection': 631,\n",
+       " 'code': 632,\n",
+       " 'taking': 633,\n",
+       " 'breaking': 634,\n",
+       " 'review': 635,\n",
+       " 'complete': 636,\n",
+       " 'hq': 637,\n",
+       " 'american': 638,\n",
+       " 'sunday': 639,\n",
+       " 'ice': 640,\n",
+       " 'early': 641,\n",
+       " 'men': 642,\n",
+       " 'google': 643,\n",
+       " 'space': 644,\n",
+       " 'report': 645,\n",
+       " 'film': 646,\n",
+       " 'updates': 647,\n",
+       " 'yes': 648,\n",
+       " 'south': 649,\n",
+       " '13': 650,\n",
+       " 'nothing': 651,\n",
+       " 'wants': 652,\n",
+       " \"she's\": 653,\n",
+       " 'daily': 654,\n",
+       " 'between': 655,\n",
+       " 'campaign': 656,\n",
+       " 'already': 657,\n",
+       " 'color': 658,\n",
+       " 'deal': 659,\n",
+       " 'freddyamazin': 660,\n",
+       " 'bts': 661,\n",
+       " 'trying': 662,\n",
+       " 'york': 663,\n",
+       " 'order': 664,\n",
+       " '—': 665,\n",
+       " 'guide': 666,\n",
+       " \"they're\": 667,\n",
+       " 'aldub58thweeksary': 668,\n",
+       " 'gonna': 669,\n",
+       " 'dress': 670,\n",
+       " 'themostbeautifulfinale': 671,\n",
+       " 'dvd': 672,\n",
+       " 'later': 673,\n",
+       " \"what's\": 674,\n",
+       " 'amazon': 675,\n",
+       " '2017': 676,\n",
+       " 'moment': 677,\n",
+       " 'mark': 678,\n",
+       " 'camera': 679,\n",
+       " 'fucking': 680,\n",
+       " 'mtvhottest': 681,\n",
+       " 'p': 682,\n",
+       " 'aldublolasinconcert': 683,\n",
+       " 'dogs': 684,\n",
+       " 'believe': 685,\n",
+       " 'harambe': 686,\n",
+       " 'dm': 687,\n",
+       " 'stand': 688,\n",
+       " 'takes': 689,\n",
+       " 'bet': 690,\n",
+       " 'price': 691,\n",
+       " 'ladies': 692,\n",
+       " '❤': 693,\n",
+       " 'each': 694,\n",
+       " 'winter': 695,\n",
+       " 'signed': 696,\n",
+       " 'tweets': 697,\n",
+       " 'went': 698,\n",
+       " 'literally': 699,\n",
+       " 'body': 700,\n",
+       " 'ahead': 701,\n",
+       " 'president': 702,\n",
+       " 'tbworld2016': 703,\n",
+       " 'sun': 704,\n",
+       " 'couple': 705,\n",
+       " 'country': 706,\n",
+       " 'john': 707,\n",
+       " '08': 708,\n",
+       " '160826': 709,\n",
+       " 'single': 710,\n",
+       " 'needs': 711,\n",
+       " 'sex': 712,\n",
+       " 'shit': 713,\n",
+       " 'children': 714,\n",
+       " 'north': 715,\n",
+       " 'g': 716,\n",
+       " 'st': 717,\n",
+       " 'goes': 718,\n",
+       " 'press': 719,\n",
+       " 'omg': 720,\n",
+       " '•': 721,\n",
+       " 'lmao': 722,\n",
+       " 'michael': 723,\n",
+       " 'shop': 724,\n",
+       " '29': 725,\n",
+       " 'reading': 726,\n",
+       " 'loved': 727,\n",
+       " 'chat': 728,\n",
+       " 'yet': 729,\n",
+       " '23': 730,\n",
+       " 'care': 731,\n",
+       " 'plan': 732,\n",
+       " 'blessed': 733,\n",
+       " 'ya': 734,\n",
+       " 'forward': 735,\n",
+       " 'japan': 736,\n",
+       " 'hear': 737,\n",
+       " 'pink': 738,\n",
+       " 'mini': 739,\n",
+       " 'text': 740,\n",
+       " 'ends': 741,\n",
+       " 'thursday': 742,\n",
+       " 'thoughts': 743,\n",
+       " 'leather': 744,\n",
+       " 'thought': 745,\n",
+       " 'released': 746,\n",
+       " 'used': 747,\n",
+       " 'nike': 748,\n",
+       " '27': 749,\n",
+       " 'nba': 750,\n",
+       " 'move': 751,\n",
+       " 'print': 752,\n",
+       " 'street': 753,\n",
+       " 'success': 754,\n",
+       " 'minutes': 755,\n",
+       " 'celebrate': 756,\n",
+       " 'bring': 757,\n",
+       " 'without': 758,\n",
+       " 'sad': 759,\n",
+       " 'shows': 760,\n",
+       " 'airport': 761,\n",
+       " '2nd': 762,\n",
+       " 'evening': 763,\n",
+       " 'page': 764,\n",
+       " 'louis': 765,\n",
+       " 'level': 766,\n",
+       " 'anniversary': 767,\n",
+       " 'magazine': 768,\n",
+       " 'conference': 769,\n",
+       " 'l': 770,\n",
+       " 'festival': 771,\n",
+       " 'half': 772,\n",
+       " 'action': 773,\n",
+       " 'starting': 774,\n",
+       " 'project': 775,\n",
+       " 'tech': 776,\n",
+       " 'running': 777,\n",
+       " 'second': 778,\n",
+       " '2015': 779,\n",
+       " 'ebay': 780,\n",
+       " 'pop': 781,\n",
+       " 'dtopbeautyworld': 782,\n",
+       " 'message': 783,\n",
+       " 'loving': 784,\n",
+       " 'round': 785,\n",
+       " 'late': 786,\n",
+       " 'launch': 787,\n",
+       " 'ways': 788,\n",
+       " \"we've\": 789,\n",
+       " 'fantastic': 790,\n",
+       " 'coffee': 791,\n",
+       " 'dead': 792,\n",
+       " 'access': 793,\n",
+       " 'wall': 794,\n",
+       " 'image': 795,\n",
+       " 'forever': 796,\n",
+       " 'original': 797,\n",
+       " 'hottest': 798,\n",
+       " 'community': 799,\n",
+       " 'wearing': 800,\n",
+       " 'custom': 801,\n",
+       " 'dory': 802,\n",
+       " 'data': 803,\n",
+       " '28': 804,\n",
+       " 'bag': 805,\n",
+       " 'building': 806,\n",
+       " 'words': 807,\n",
+       " \"there's\": 808,\n",
+       " 'chocolate': 809,\n",
+       " 'talking': 810,\n",
+       " 'wwe': 811,\n",
+       " 'nfl': 812,\n",
+       " \"who's\": 813,\n",
+       " 'incredible': 814,\n",
+       " 'jordan': 815,\n",
+       " 'near': 816,\n",
+       " 'offer': 817,\n",
+       " 'dr': 818,\n",
+       " 'sets': 819,\n",
+       " 'stunning': 820,\n",
+       " 'pls': 821,\n",
+       " 'de': 822,\n",
+       " 'arsenal': 823,\n",
+       " 'cup': 824,\n",
+       " 'cat': 825,\n",
+       " 'came': 826,\n",
+       " 'ad': 827,\n",
+       " 'side': 828,\n",
+       " 'trip': 829,\n",
+       " 'concert': 830,\n",
+       " 'debate': 831,\n",
+       " 'squad': 832,\n",
+       " 'signs': 833,\n",
+       " \"men's\": 834,\n",
+       " 'dark': 835,\n",
+       " 'cake': 836,\n",
+       " 'match': 837,\n",
+       " 'questions': 838,\n",
+       " 'send': 839,\n",
+       " 'human': 840,\n",
+       " 'kid': 841,\n",
+       " 'posted': 842,\n",
+       " 'products': 843,\n",
+       " 'united': 844,\n",
+       " 'galaxy': 845,\n",
+       " 'sky': 846,\n",
+       " 'website': 847,\n",
+       " 'plus': 848,\n",
+       " 'greatest': 849,\n",
+       " 'pro': 850,\n",
+       " 'performance': 851,\n",
+       " 'got7': 852,\n",
+       " 'large': 853,\n",
+       " 'opening': 854,\n",
+       " 'appreciate': 855,\n",
+       " 'spot': 856,\n",
+       " 'player': 857,\n",
+       " 'actually': 858,\n",
+       " 'model': 859,\n",
+       " 'trailer': 860,\n",
+       " 'battle': 861,\n",
+       " 'whole': 862,\n",
+       " '160825': 863,\n",
+       " 'river': 864,\n",
+       " 'global': 865,\n",
+       " 'add': 866,\n",
+       " 'lets': 867,\n",
+       " \"you've\": 868,\n",
+       " 'hillaryclinton': 869,\n",
+       " 'student': 870,\n",
+       " '😂😂😂': 871,\n",
+       " 'bday': 872,\n",
+       " 'key': 873,\n",
+       " 'mobile': 874,\n",
+       " 'rock': 875,\n",
+       " 'pushawardslizquens': 876,\n",
+       " '21': 877,\n",
+       " 'weeks': 878,\n",
+       " '160824': 879,\n",
+       " 'system': 880,\n",
+       " 'ok': 881,\n",
+       " 'saw': 882,\n",
+       " 'interview': 883,\n",
+       " 'close': 884,\n",
+       " 'roses': 885,\n",
+       " 'fight': 886,\n",
+       " 'jewelry': 887,\n",
+       " 'war': 888,\n",
+       " 'waiting': 889,\n",
+       " 'shot': 890,\n",
+       " 'started': 891,\n",
+       " 'kami': 892,\n",
+       " 'queen': 893,\n",
+       " 'cook': 894,\n",
+       " 'makeup': 895,\n",
+       " 'lunch': 896,\n",
+       " 'obama': 897,\n",
+       " 'android': 898,\n",
+       " 'huge': 899,\n",
+       " 'classic': 900,\n",
+       " 'yours': 901,\n",
+       " 'walk': 902,\n",
+       " 'far': 903,\n",
+       " 'pokemon': 904,\n",
+       " 'monday': 905,\n",
+       " 'quote': 906,\n",
+       " 'lost': 907,\n",
+       " 'seo': 908,\n",
+       " 'four': 909,\n",
+       " 'sexy': 910,\n",
+       " 'short': 911,\n",
+       " 'coach': 912,\n",
+       " 'hour': 913,\n",
+       " 'university': 914,\n",
+       " 'xbox': 915,\n",
+       " 'else': 916,\n",
+       " 'hello': 917,\n",
+       " 'happiness': 918,\n",
+       " 'catch': 919,\n",
+       " 'cnn': 920,\n",
+       " 'kit': 921,\n",
+       " 'thug': 922,\n",
+       " 'wanted': 923,\n",
+       " 'notifications': 924,\n",
+       " 'grade': 925,\n",
+       " \"'\": 926,\n",
+       " 'bed': 927,\n",
+       " 'guess': 928,\n",
+       " 'experience': 929,\n",
+       " 'hd': 930,\n",
+       " 'texas': 931,\n",
+       " 'different': 932,\n",
+       " 'public': 933,\n",
+       " 'debut': 934,\n",
+       " 'glass': 935,\n",
+       " 'holiday': 936,\n",
+       " 'flavors': 937,\n",
+       " 'pre': 938,\n",
+       " 'justin': 939,\n",
+       " 'record': 940,\n",
+       " '160827': 941,\n",
+       " 'ring': 942,\n",
+       " 'artist': 943,\n",
+       " 'hotel': 944,\n",
+       " 'billboard': 945,\n",
+       " 'seeing': 946,\n",
+       " 'happens': 947,\n",
+       " 'once': 948,\n",
+       " 'painting': 949,\n",
+       " 'living': 950,\n",
+       " 'issue': 951,\n",
+       " 'necklace': 952,\n",
+       " 'award': 953,\n",
+       " 'starts': 954,\n",
+       " 'followers': 955,\n",
+       " 'break': 956,\n",
+       " 'track': 957,\n",
+       " 'sleep': 958,\n",
+       " '😂😂': 959,\n",
+       " '”': 960,\n",
+       " 'bless': 961,\n",
+       " 'foundation': 962,\n",
+       " 'icymi': 963,\n",
+       " 'lady': 964,\n",
+       " 'profile': 965,\n",
+       " 'international': 966,\n",
+       " 'vanilla': 967,\n",
+       " 'ass': 968,\n",
+       " 'article': 969,\n",
+       " 'extra': 970,\n",
+       " 'aldubdatekay': 971,\n",
+       " 'session': 972,\n",
+       " 'sales': 973,\n",
+       " \"women's\": 974,\n",
+       " '✨': 975,\n",
+       " 'five': 976,\n",
+       " 'sunset': 977,\n",
+       " 'front': 978,\n",
+       " 'poster': 979,\n",
+       " 'draw': 980,\n",
+       " 'handmade': 981,\n",
+       " 'brown': 982,\n",
+       " 'number': 983,\n",
+       " 'grey': 984,\n",
+       " 'build': 985,\n",
+       " 'talks': 986,\n",
+       " '22': 987,\n",
+       " 'easy': 988,\n",
+       " 'sm': 989,\n",
+       " 'earth': 990,\n",
+       " 'rest': 991,\n",
+       " 'enjoying': 992,\n",
+       " 'called': 993,\n",
+       " 'created': 994,\n",
+       " 'oct': 995,\n",
+       " 'eat': 996,\n",
+       " 'learning': 997,\n",
+       " \"where's\": 998,\n",
+       " 'low': 999,\n",
+       " 'kind': 1000,\n",
+       " ...}"
+      ]
+     },
+     "execution_count": 171,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tokenizer.word_index"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can then use the tokenizer to convert all texts in the training-set to lists of these tokens."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 172,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x_train_tokens = tokenizer.texts_to_sequences(x_train)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For example, here is a text from the training-set:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 173,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "IOPub data rate exceeded.\n",
+      "The notebook server will temporarily stop sending output\n",
+      "to the client in order to avoid crashing it.\n",
+      "To change this limit, set the config variable\n",
+      "`--NotebookApp.iopub_data_rate_limit`.\n",
+      "\n",
+      "Current values:\n",
+      "NotebookApp.iopub_data_rate_limit=1000000.0 (bytes/sec)\n",
+      "NotebookApp.rate_limit_window=3.0 (secs)\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "##print(\"\\n\",learning_df.loc[160625,:])\n",
+    "print(\"\\n\", x_train_tokens)\n",
+    "##print(y[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This text corresponds to the following list of tokens:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 174,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([   4, 4584,   93, 2625, 2115, 5542, 1011, 1456,   59, 5359,  368,\n",
+       "        314,  134,   59, 2138,    1,    2,    3, 5828])"
+      ]
+     },
+     "execution_count": 174,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.array(x_train_tokens[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We also need to convert the texts in the test-set to tokens."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 175,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x_test_tokens = tokenizer.texts_to_sequences(x_test)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Padding and Truncating Data\n",
+    "\n",
+    "The Recurrent Neural Network can take sequences of arbitrary length as input, but in order to use a whole batch of data, the sequences need to have the same length. There are two ways of achieving this: (A) Either we ensure that all sequences in the entire data-set have the same length, or (B) we write a custom data-generator that ensures the sequences have the same length within each batch.\n",
+    "\n",
+    "Solution (A) is simpler but if we use the length of the longest sequence in the data-set, then we are wasting a lot of memory. This is particularly important for larger data-sets.\n",
+    "\n",
+    "So in order to make a compromise, we will use a sequence-length that covers most sequences in the data-set, and we will then truncate longer sequences and pad shorter sequences.\n",
+    "\n",
+    "First we count the number of tokens in all the sequences in the data-set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 176,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_tokens = [len(tokens) for tokens in x_train_tokens + x_test_tokens]\n",
+    "num_tokens = np.array(num_tokens)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The average number of tokens in a sequence is:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 177,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "15.617023597425735"
+      ]
+     },
+     "execution_count": 177,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.mean(num_tokens)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The maximum number of tokens in a sequence is:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 178,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "36"
+      ]
+     },
+     "execution_count": 178,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.max(num_tokens)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### The max number of tokens we will allow is set to the average plus 2 standard deviations."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 179,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "max_tokens = np.mean(num_tokens) + 2 * np.std(num_tokens)\n",
+    "##max_tokens = np.max(num_tokens)\n",
+    "max_tokens = math.floor(max_tokens)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This covers about 95% of the data-set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 180,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.9662816004487822"
+      ]
+     },
+     "execution_count": 180,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.sum(num_tokens < max_tokens) / len(num_tokens)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "When padding or truncating the sequences that have a different length, we need to determine if we want to do this padding or truncating 'pre' or 'post'. If a sequence is truncated, it means that a part of the sequence is simply thrown away. If a sequence is padded, it means that zeros are added to the sequence.\n",
+    "\n",
+    "So the choice of 'pre' or 'post' can be important because it determines whether we throw away the first or last part of a sequence when truncating, and it determines whether we add zeros to the beginning or end of the sequence when padding. This may confuse the Recurrent Neural Network."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 181,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pad = 'pre'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 182,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x_train_pad = pad_sequences(x_train_tokens, maxlen=max_tokens,\n",
+    "                            padding=pad, truncating=pad)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 183,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x_test_pad = pad_sequences(x_test_tokens, maxlen=max_tokens,\n",
+    "                           padding=pad, truncating=pad)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We have now transformed the training-set into one big matrix of integers (tokens) with this shape:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 184,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(288781, 25)"
+      ]
+     },
+     "execution_count": 184,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x_train_pad.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The matrix for the test-set has the same shape:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 185,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(96261, 25)"
+      ]
+     },
+     "execution_count": 185,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x_test_pad.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For example, we had the following sequence of tokens above:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 186,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([   4, 4584,   93, 2625, 2115, 5542, 1011, 1456,   59, 5359,  368,\n",
+       "        314,  134,   59, 2138,    1,    2,    3, 5828])"
+      ]
+     },
+     "execution_count": 186,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "np.array(x_train_tokens[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This has simply been padded to create the following sequence. Note that when this is input to the Recurrent Neural Network, then it first inputs a lot of zeros. If we had padded 'post' then it would input the integer-tokens first and then a lot of zeros. This may confuse the Recurrent Neural Network."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 187,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([   0,    0,    0,    0,    0,    0,    4, 4584,   93, 2625, 2115,\n",
+       "       5542, 1011, 1456,   59, 5359,  368,  314,  134,   59, 2138,    1,\n",
+       "          2,    3, 5828], dtype=int32)"
+      ]
+     },
+     "execution_count": 187,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x_train_pad[1]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Tokenizer Inverse Map\n",
+    "\n",
+    "For some strange reason, the Keras implementation of a tokenizer does not seem to have the inverse mapping from integer-tokens back to words, which is needed to reconstruct text-strings from lists of tokens. So we make that mapping here."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 188,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "idx = tokenizer.word_index\n",
+    "inverse_map = dict(zip(idx.values(), idx.keys()))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Helper-function for converting a list of tokens back to a string of words."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 189,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def tokens_to_string(tokens):\n",
+    "    # Map from tokens back to words.\n",
+    "    words = [inverse_map[token] for token in tokens if token != 0]\n",
+    "    \n",
+    "    # Concatenate all words.\n",
+    "    text = \" \".join(words)\n",
+    "\n",
+    "    return text"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For example, this is the original text from the data-set:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 190,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'RT @ESPNNBA: 5 titles.33,643 career points.1,346 games.20 years.1 Mamba. https://t.co/AxoXkh63eQ'"
+      ]
+     },
+     "execution_count": 190,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x_train[1]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can recreate this text except for punctuation and other symbols, by converting the list of tokens back to words:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 191,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'rt espnnba 5 titles 33 643 career points 1 346 games 20 years 1 mamba https t co axoxkh63eq'"
+      ]
+     },
+     "execution_count": 191,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tokens_to_string(x_train_tokens[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Create the Recurrent Neural Network\n",
+    "\n",
+    "We are now ready to create the Recurrent Neural Network (RNN). We will use the Keras API for this because of its simplicity. See Tutorial #03-C for a tutorial on Keras."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 192,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model = Sequential()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The first layer in the RNN is a so-called Embedding-layer which converts each integer-token into a vector of values. This is necessary because the integer-tokens may take on values between 0 and 10000 for a vocabulary of 10000 words. The RNN cannot work on values in such a wide range. The embedding-layer is trained as a part of the RNN and will learn to map words with similar semantic meanings to similar embedding-vectors, as will be shown further below.\n",
+    "\n",
+    "First we define the size of the embedding-vector for each integer-token. In this case we have set it to 8, so that each integer-token will be converted to a vector of length 8. The values of the embedding-vector will generally fall roughly between -1.0 and 1.0, although they may exceed these values somewhat.\n",
+    "\n",
+    "The size of the embedding-vector is typically selected between 100-300, but it seems to work reasonably well with small values for Sentiment Analysis."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 193,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "figure_of_merit = 2 * max_tokens ## was 100\n",
+    "first_layer = math.floor(max_tokens/2) + 2\n",
+    "second_layer = math.floor(max_tokens/3) + 2\n",
+    "third_layer = math.floor(max_tokens/4) + 3\n",
+    "fourth_layer = math.floor(max_tokens/5) + 3\n",
+    "embedding_size = figure_of_merit"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The embedding-layer also needs to know the number of words in the vocabulary (`num_words`) and the length of the padded token-sequences (`max_tokens`). We also give this layer a name because we need to retrieve its weights further below."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 194,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.add(Embedding(input_dim=num_words,## was num_words\n",
+    "                    output_dim=embedding_size,                    \n",
+    "                    input_length=max_tokens,\n",
+    "                   name='layer_embedding'))\n",
+    "##model.add(Flatten())\n",
+    "\n",
+    "##model = tf.keras.Sequential([\n",
+    "##    tf.keras.layers.Embedding(input_dim = num_words, output_dim = embedding_size, input_length=max_tokens),\n",
+    "##    tf.keras.layers.Flatten(),\n",
+    "##    tf.keras.layers.Dense(30, activation='relu'),\n",
+    "##    tf.keras.layers.Dense(60, activation='sigmoid')\n",
+    "##    tf.keras.layers.Dense(15, activation='relu')\n",
+    "##    tf.keras.layers.Dense(3, activation='sigmoid')\n",
+    "##])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can now add the first Gated Recurrent Unit (GRU) to the network. This will have 16 outputs. Because we will add a second GRU after this one, we need to return sequences of data because the next GRU expects sequences as its input."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 195,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.add(GRU(units=first_layer, activation = 'relu', recurrent_activation = 'sigmoid', return_sequences=True))\n",
+    "##model.add(Dense(first_layer, activation='softmax'))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This adds the second GRU with 8 output units. This will be followed by another GRU so it must also return sequences."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 196,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.add(GRU(units=second_layer, activation = 'tanh' ,recurrent_activation = 'sigmoid', return_sequences=True))\n",
+    "##model.add(Dense(second_layer, activation='sigmoid'))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This adds the third and final GRU with 4 output units. This will be followed by a dense-layer, so it should only give the final output of the GRU and not a whole sequence of outputs."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 197,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.add(GRU(units=third_layer, activation = 'relu', recurrent_activation = 'sigmoid', return_sequences = True))\n",
+    "model.add(GRU(units=fourth_layer, activation = 'tanh'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Add a fully-connected / dense layer which computes a value between 0 and 1.0 that will be used as the classification output."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 198,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.add(Dense(3, activation='softmax')) ## was 3"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Use the Adam optimizer with the given learning-rate."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 199,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "optimizer = Adam(learning_rate=1e-3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Compile the Keras model so it is ready for training."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 200,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.compile(loss='categorical_crossentropy',\n",
+    "              optimizer=optimizer,\n",
+    "             metrics=['accuracy'])\n",
+    "##model.compile(loss='binary_crossentropy',\n",
+    "##              optimizer=optimizer,\n",
+    "##              metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 201,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Model: \"sequential_2\"\n",
+      "_________________________________________________________________\n",
+      "Layer (type)                 Output Shape              Param #   \n",
+      "=================================================================\n",
+      "layer_embedding (Embedding)  (None, 25, 50)            1500000   \n",
+      "_________________________________________________________________\n",
+      "gru_8 (GRU)                  (None, 25, 14)            2772      \n",
+      "_________________________________________________________________\n",
+      "gru_9 (GRU)                  (None, 25, 10)            780       \n",
+      "_________________________________________________________________\n",
+      "gru_10 (GRU)                 (None, 25, 9)             567       \n",
+      "_________________________________________________________________\n",
+      "gru_11 (GRU)                 (None, 8)                 456       \n",
+      "_________________________________________________________________\n",
+      "dense_2 (Dense)              (None, 3)                 27        \n",
+      "=================================================================\n",
+      "Total params: 1,504,602\n",
+      "Trainable params: 1,504,602\n",
+      "Non-trainable params: 0\n",
+      "_________________________________________________________________\n"
+     ]
+    }
+   ],
+   "source": [
+    "model.summary()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## make callbacks"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 202,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "callbackx = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', \n",
+    "                                             patience =1,\n",
+    "                                            restore_best_weights = True)\n",
+    "        \n",
+    "class myCallback(tf.keras.callbacks.Callback):\n",
+    "  def on_epoch_end(self, epoch, logs={}):\n",
+    "    if(logs.get('val_accuracy') > 0.95):\n",
+    "      print(\"\\nReached 95% accuracy, so slowing the learning rate.\")\n",
+    "      optimizer = Ftrl(learning_rate = 1e-4)\n",
+    "      self.model.stop_training = False\n",
+    "\n",
+    "call_it = myCallback()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Train the Recurrent Neural Network\n",
+    "\n",
+    "We can now train the model. Note that we are using the data-set with the padded sequences. We use 5% of the training-set as a small validation-set, so we have a rough idea whether the model is generalizing well or if it is perhaps over-fitting to the training-set."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "scrolled": true
+   },
+   "source": [
+    "%%time\n",
+    "model.fit(x_train_pad, y_train,\n",
+    "          validation_split=0.15, epochs=10, batch_size= 256,\n",
+    "            callbacks = [callbackx, call_it])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Performance on Test-Set\n",
+    "\n",
+    "Now that the model has been trained we can calculate its classification accuracy on the test-set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 203,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/20\n",
+      "902/903 [============================>.] - ETA: 0s - loss: 0.5086 - accuracy: 0.8972\n",
+      "Reached 95% accuracy, so slowing the learning rate.\n",
+      "903/903 [==============================] - 57s 64ms/step - loss: 0.5086 - accuracy: 0.8973 - val_loss: 0.4176 - val_accuracy: 0.9623\n",
+      "Epoch 2/20\n",
+      "903/903 [==============================] - ETA: 0s - loss: 0.4053 - accuracy: 0.9702\n",
+      "Reached 95% accuracy, so slowing the learning rate.\n",
+      "903/903 [==============================] - 54s 59ms/step - loss: 0.4053 - accuracy: 0.9702 - val_loss: 0.4131 - val_accuracy: 0.9651\n",
+      "Epoch 3/20\n",
+      "902/903 [============================>.] - ETA: 0s - loss: 0.3949 - accuracy: 0.9768\n",
+      "Reached 95% accuracy, so slowing the learning rate.\n",
+      "903/903 [==============================] - 52s 58ms/step - loss: 0.3949 - accuracy: 0.9768 - val_loss: 0.4137 - val_accuracy: 0.9650\n",
+      "CPU times: user 6min 30s, sys: 2min 47s, total: 9min 17s\n",
+      "Wall time: 2min 49s\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<tensorflow.python.keras.callbacks.History at 0x7fea93c2ddd0>"
+      ]
+     },
+     "execution_count": 203,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "%%time\n",
+    "model.fit(x_train_pad, y_train,\n",
+    "          validation_split=0.2, epochs=20, batch_size=256,\n",
+    "            callbacks = [call_it, callbackx])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 204,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "3009/3009 [==============================] - 21s 7ms/step - loss: 0.4142 - accuracy: 0.9638\n",
+      "CPU times: user 32.9 s, sys: 10.7 s, total: 43.6 s\n",
+      "Wall time: 20.6 s\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%time\n",
+    "result = model.evaluate(x_test_pad, y_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 205,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy: 96.38%\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"Accuracy: {0:.2%}\".format(result[1]))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## save model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 206,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{\"class_name\": \"Sequential\", \"config\": {\"name\": \"sequential_2\", \"layers\": [{\"class_name\": \"InputLayer\", \"config\": {\"batch_input_shape\": [null, 25], \"dtype\": \"float32\", \"sparse\": false, \"ragged\": false, \"name\": \"layer_embedding_input\"}}, {\"class_name\": \"Embedding\", \"config\": {\"name\": \"layer_embedding\", \"trainable\": true, \"batch_input_shape\": [null, 25], \"dtype\": \"float32\", \"input_dim\": 30000, \"output_dim\": 50, \"embeddings_initializer\": {\"class_name\": \"RandomUniform\", \"config\": {\"minval\": -0.05, \"maxval\": 0.05, \"seed\": null}}, \"embeddings_regularizer\": null, \"activity_regularizer\": null, \"embeddings_constraint\": null, \"mask_zero\": false, \"input_length\": 25}}, {\"class_name\": \"GRU\", \"config\": {\"name\": \"gru_8\", \"trainable\": true, \"dtype\": \"float32\", \"return_sequences\": true, \"return_state\": false, \"go_backwards\": false, \"stateful\": false, \"unroll\": false, \"time_major\": false, \"units\": 14, \"activation\": \"relu\", \"recurrent_activation\": \"sigmoid\", \"use_bias\": true, \"kernel_initializer\": {\"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}}, \"recurrent_initializer\": {\"class_name\": \"Orthogonal\", \"config\": {\"gain\": 1.0, \"seed\": null}}, \"bias_initializer\": {\"class_name\": \"Zeros\", \"config\": {}}, \"kernel_regularizer\": null, \"recurrent_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"recurrent_constraint\": null, \"bias_constraint\": null, \"dropout\": 0.0, \"recurrent_dropout\": 0.0, \"implementation\": 2, \"reset_after\": true}}, {\"class_name\": \"GRU\", \"config\": {\"name\": \"gru_9\", \"trainable\": true, \"dtype\": \"float32\", \"return_sequences\": true, \"return_state\": false, \"go_backwards\": false, \"stateful\": false, \"unroll\": false, \"time_major\": false, \"units\": 10, \"activation\": \"tanh\", \"recurrent_activation\": \"sigmoid\", \"use_bias\": true, \"kernel_initializer\": {\"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}}, \"recurrent_initializer\": {\"class_name\": \"Orthogonal\", \"config\": {\"gain\": 1.0, \"seed\": null}}, \"bias_initializer\": {\"class_name\": \"Zeros\", \"config\": {}}, \"kernel_regularizer\": null, \"recurrent_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"recurrent_constraint\": null, \"bias_constraint\": null, \"dropout\": 0.0, \"recurrent_dropout\": 0.0, \"implementation\": 2, \"reset_after\": true}}, {\"class_name\": \"GRU\", \"config\": {\"name\": \"gru_10\", \"trainable\": true, \"dtype\": \"float32\", \"return_sequences\": true, \"return_state\": false, \"go_backwards\": false, \"stateful\": false, \"unroll\": false, \"time_major\": false, \"units\": 9, \"activation\": \"relu\", \"recurrent_activation\": \"sigmoid\", \"use_bias\": true, \"kernel_initializer\": {\"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}}, \"recurrent_initializer\": {\"class_name\": \"Orthogonal\", \"config\": {\"gain\": 1.0, \"seed\": null}}, \"bias_initializer\": {\"class_name\": \"Zeros\", \"config\": {}}, \"kernel_regularizer\": null, \"recurrent_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"recurrent_constraint\": null, \"bias_constraint\": null, \"dropout\": 0.0, \"recurrent_dropout\": 0.0, \"implementation\": 2, \"reset_after\": true}}, {\"class_name\": \"GRU\", \"config\": {\"name\": \"gru_11\", \"trainable\": true, \"dtype\": \"float32\", \"return_sequences\": false, \"return_state\": false, \"go_backwards\": false, \"stateful\": false, \"unroll\": false, \"time_major\": false, \"units\": 8, \"activation\": \"tanh\", \"recurrent_activation\": \"sigmoid\", \"use_bias\": true, \"kernel_initializer\": {\"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}}, \"recurrent_initializer\": {\"class_name\": \"Orthogonal\", \"config\": {\"gain\": 1.0, \"seed\": null}}, \"bias_initializer\": {\"class_name\": \"Zeros\", \"config\": {}}, \"kernel_regularizer\": null, \"recurrent_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"recurrent_constraint\": null, \"bias_constraint\": null, \"dropout\": 0.0, \"recurrent_dropout\": 0.0, \"implementation\": 2, \"reset_after\": true}}, {\"class_name\": \"Dense\", \"config\": {\"name\": \"dense_2\", \"trainable\": true, \"dtype\": \"float32\", \"units\": 3, \"activation\": \"softmax\", \"use_bias\": true, \"kernel_initializer\": {\"class_name\": \"GlorotUniform\", \"config\": {\"seed\": null}}, \"bias_initializer\": {\"class_name\": \"Zeros\", \"config\": {}}, \"kernel_regularizer\": null, \"bias_regularizer\": null, \"activity_regularizer\": null, \"kernel_constraint\": null, \"bias_constraint\": null}}]}, \"keras_version\": \"2.4.0\", \"backend\": \"tensorflow\"}\n",
+      "saved model\n"
+     ]
+    }
+   ],
+   "source": [
+    "##from keras.models import models_from_json\n",
+    "model_json = model.to_json()\n",
+    "with open (\"model.json\", \"w\") as json_file:\n",
+    "    json_file.write(model_json)\n",
+    "model.save_weights(\"model.h5\")\n",
+    "\n",
+    "model.save(\"modelv2.h5\")\n",
+    "print(model_json)\n",
+    "print(\"saved model\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Example of Mis-Classified Text\n",
+    "\n",
+    "In order to show an example of mis-classified text, we first calculate the predicted sentiment for the first 1000 texts in the test-set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 207,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "## Load the saved model and see if the results differ\n",
+    "\n",
+    "model_file = '/Users/mutecypher/Documents/UW_work/GitHub/twitter-project/twitter-project/modelv2.h5'\n",
+    "\n",
+    "loaded_model = load_model(\n",
+    "    model_file,\n",
+    "    custom_objects = None,\n",
+    "    compile=True\n",
+    ")\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 208,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 1.21 s, sys: 197 ms, total: 1.4 s\n",
+      "Wall time: 1.13 s\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%time\n",
+    "##y_pred = model.predict(x=x_test_pad[0:1000])\n",
+    "y_pred = loaded_model.predict(x=x_test_pad[0:1000])\n",
+    "y_pred = y_pred.T[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "These predicted numbers fall between 0.0 and 1.0. We use a cutoff / threshold and say that all values above 0.5 are taken to be 1.0 and all values below 0.5 are taken to be 0.0. This gives us a predicted \"class\" of either 0.0 or 1.0."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 209,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cls_pred = np.array([1.0 if p>0.5 else 0.0 for p in y_pred])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The true \"class\" for the first 1000 texts in the test-set are needed for comparison."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 210,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cls_true = np.array(y_test[0:1000])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can then get indices for all the texts that were incorrectly classified by comparing all the \"classes\" of these two arrays."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 211,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/mutecypher/anaconda3/lib/python3.7/site-packages/ipykernel_launcher.py:1: DeprecationWarning: elementwise comparison failed; this will raise an error in the future.\n",
+      "  \"\"\"Entry point for launching an IPython kernel.\n"
+     ]
+    }
+   ],
+   "source": [
+    "incorrect = np.where(cls_pred != cls_true)\n",
+    "incorrect = incorrect[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Of the 1000 texts used, how many were mis-classified?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 212,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1"
+      ]
+     },
+     "execution_count": 212,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(incorrect)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let us look at the first mis-classified text. We will use its index several times."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 213,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 213,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "idx = incorrect[0]\n",
+    "idx"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The mis-classified text is:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 214,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'Dave, Thank you. #SupremeCommander https://t.co/tzQuX0u7ix'"
+      ]
+     },
+     "execution_count": 214,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "text = x_test[idx]\n",
+    "text"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "These are the predicted and true classes for the text:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 215,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.012187792"
+      ]
+     },
+     "execution_count": 215,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "y_pred[idx]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 216,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.01277393, 0.06582411, 0.92140196])"
+      ]
+     },
+     "execution_count": 216,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cls_true[idx]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## New Data\n",
+    "\n",
+    "Let us try and classify new texts that we make up. Some of these are obvious, while others use negation and sarcasm to try and confuse the model into mis-classifying the text."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 217,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "text1 = \"This movie is fantastic! I really like it because it is so good!\"\n",
+    "text2 = \"Good movie!\"\n",
+    "text3 = \"Maybe I like this movie.\"\n",
+    "text4 = \"Meh ...\"\n",
+    "text5 = \"If I were a drunk teenager then this movie might be good.\"\n",
+    "text6 = \"Bad movie!\"\n",
+    "text7 = \"Not a good movie!\"\n",
+    "text8 = \"This movie really sucks! Can I get my money back please?\"\n",
+    "texts = [text1, text2, text3, text4, text5, text6, text7, text8]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We first convert these texts to arrays of integer-tokens because that is needed by the model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 218,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tokens = tokenizer.texts_to_sequences(texts)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To input texts with different lengths into the model, we also need to pad and truncate them."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 219,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(8, 25)"
+      ]
+     },
+     "execution_count": 219,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tokens_pad = pad_sequences(tokens, maxlen=max_tokens,\n",
+    "                           padding=pad, truncating=pad)\n",
+    "tokens_pad.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can now use the trained model to predict the sentiment for these texts."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 220,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.01341996, 0.04518502, 0.941395  ],\n",
+       "       [0.02588473, 0.17225054, 0.8018647 ],\n",
+       "       [0.03461722, 0.814975  , 0.15040773],\n",
+       "       [0.0431902 , 0.76560616, 0.19120368],\n",
+       "       [0.44022912, 0.328373  , 0.23139791],\n",
+       "       [0.38009077, 0.3407555 , 0.27915376],\n",
+       "       [0.10359365, 0.15298554, 0.7434208 ],\n",
+       "       [0.8059336 , 0.08199111, 0.11207534]], dtype=float32)"
+      ]
+     },
+     "execution_count": 220,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "## Note, using the loaded prediciton model.\n",
+    "\n",
+    "loaded_model.predict(tokens_pad)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "A value close to 0.0 means a negative sentiment and a value close to 1.0 means a positive sentiment. These numbers will vary every time you train the model."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Embeddings\n",
+    "\n",
+    "The model cannot work on integer-tokens directly, because they are integer values that may range between 0 and the number of words in our vocabulary, e.g. 10000. So we need to convert the integer-tokens into vectors of values that are roughly between -1.0 and 1.0 which can be used as input to a neural network.\n",
+    "\n",
+    "This mapping from integer-tokens to real-valued vectors is also called an \"embedding\". It is essentially just a matrix where each row contains the vector-mapping of a single token. This means we can quickly lookup the mapping of each integer-token by simply using the token as an index into the matrix. The embeddings are learned along with the rest of the model during training.\n",
+    "\n",
+    "Ideally the embedding would learn a mapping where words that are similar in meaning also have similar embedding-values. Let us investigate if that has happened here.\n",
+    "\n",
+    "First we need to get the embedding-layer from the model:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 221,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "layer_embedding = model.get_layer('layer_embedding')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can then get the weights used for the mapping done by the embedding-layer."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 222,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "weights_embedding = layer_embedding.get_weights()[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Note that the weights are actually just a matrix with the number of words in the vocabulary times the vector length for each embedding. That's because it is basically just a lookup-matrix."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 223,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(30000, 50)"
+      ]
+     },
+     "execution_count": 223,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "weights_embedding.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let us get the integer-token for the word 'good', which is just an index into the vocabulary."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 224,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "41"
+      ]
+     },
+     "execution_count": 224,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "token_good = tokenizer.word_index['good']\n",
+    "token_good"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let us also get the integer-token for the word 'great'."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 225,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "46"
+      ]
+     },
+     "execution_count": 225,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "token_great = tokenizer.word_index['great']\n",
+    "token_great"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "These integertokens may be far apart and will depend on the frequency of those words in the data-set.\n",
+    "\n",
+    "Now let us compare the vector-embeddings for the words 'good' and 'great'. Several of these values are similar, although some values are quite different. Note that these values will change every time you train the model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 226,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([-5.51010706e-02, -1.12106852e-01,  8.37385654e-02, -1.65141091e-01,\n",
+       "        1.41987994e-01, -1.41510323e-01,  9.47839767e-02,  1.21307060e-01,\n",
+       "       -1.69241533e-01,  2.15572730e-01,  1.52045280e-01, -5.68976663e-02,\n",
+       "        4.65135872e-02,  6.62474930e-02, -1.78215176e-01, -4.78788605e-03,\n",
+       "       -1.35218769e-01,  6.09717928e-02, -1.32909864e-01, -6.41408712e-02,\n",
+       "       -1.61205396e-01,  1.37729153e-01, -2.11422652e-01, -1.59548253e-01,\n",
+       "        1.22058168e-01, -7.05837160e-02,  1.63391694e-01, -7.27635399e-02,\n",
+       "       -5.07887565e-02, -1.36352226e-01, -6.51499331e-02,  1.72442824e-01,\n",
+       "       -1.01781026e-01,  1.96732938e-01, -2.01883197e-01,  6.61416352e-02,\n",
+       "        1.06423639e-01,  1.29459500e-01,  2.48035148e-01, -1.46748617e-01,\n",
+       "        1.56347323e-02, -1.13620244e-01, -9.33303311e-02,  1.83490068e-01,\n",
+       "        1.24724902e-05,  1.51187316e-01, -1.41101524e-01, -1.77363545e-01,\n",
+       "        2.12881967e-01,  1.68164074e-01], dtype=float32)"
+      ]
+     },
+     "execution_count": 226,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "weights_embedding[token_good]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 227,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.02577311, -0.17450956,  0.1918682 , -0.14746931,  0.1547331 ,\n",
+       "       -0.11118331,  0.09740303,  0.08440413, -0.16888295,  0.16702503,\n",
+       "        0.1547506 , -0.06719464,  0.12319116,  0.04810318, -0.19304319,\n",
+       "        0.05043068, -0.1995361 ,  0.12419479, -0.10544388, -0.11648162,\n",
+       "       -0.16914499,  0.26292366, -0.19834752, -0.27044022,  0.17867236,\n",
+       "       -0.09884605,  0.21502088, -0.01366386, -0.11669919, -0.13100989,\n",
+       "       -0.13732488,  0.20833544, -0.146906  ,  0.18891814, -0.1358911 ,\n",
+       "        0.18773478,  0.01511186,  0.1320751 ,  0.21055852, -0.21841477,\n",
+       "       -0.08528985, -0.15676536, -0.07643281,  0.19198489, -0.11754822,\n",
+       "        0.18733563, -0.18903065, -0.23537163,  0.17992114,  0.16974185],\n",
+       "      dtype=float32)"
+      ]
+     },
+     "execution_count": 227,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "weights_embedding[token_great]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Similarly, we can compare the embeddings for the words 'bad' and 'horrible'."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 228,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "token_bad = tokenizer.word_index['bad']\n",
+    "token_horrible = tokenizer.word_index['horrible']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 229,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.08066481,  0.16776824,  0.08388713, -0.06257661,  0.13201231,\n",
+       "       -0.0585549 ,  0.15644857,  0.00346041, -0.061767  ,  0.12265275,\n",
+       "       -0.07748775, -0.06602003,  0.09511399, -0.1627972 , -0.00328714,\n",
+       "        0.10210928,  0.05232342,  0.08827691, -0.136113  , -0.06685302,\n",
+       "       -0.10456099,  0.13722387,  0.14126492, -0.07260384, -0.04352903,\n",
+       "       -0.12932448,  0.11974233,  0.11555576, -0.10084796, -0.09489793,\n",
+       "        0.08221328,  0.15435952,  0.01311036,  0.14923927,  0.03810555,\n",
+       "        0.0058907 , -0.07112077,  0.15129845,  0.05600594, -0.05740318,\n",
+       "       -0.05860981,  0.16726483,  0.1540692 , -0.12899184, -0.07183234,\n",
+       "       -0.03853767, -0.10915019, -0.11196961, -0.03061247, -0.10591294],\n",
+       "      dtype=float32)"
+      ]
+     },
+     "execution_count": 229,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "weights_embedding[token_bad]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 230,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.19544749,  0.18256474,  0.13536565, -0.1896587 ,  0.15687627,\n",
+       "       -0.11462072,  0.12822707,  0.09840572,  0.0653508 ,  0.17926642,\n",
+       "       -0.16639413, -0.12547715,  0.12914585, -0.1363959 ,  0.06770354,\n",
+       "        0.18942891,  0.08988381,  0.14126469, -0.1481955 , -0.14795332,\n",
+       "       -0.03078558,  0.15162487,  0.14532109, -0.11794344, -0.12285238,\n",
+       "       -0.19551818,  0.07853369,  0.1561561 , -0.12739299, -0.10618559,\n",
+       "        0.10670841,  0.11985598,  0.09238372,  0.10637285,  0.06897062,\n",
+       "        0.11979688, -0.13044547,  0.11251762,  0.12947436, -0.11334951,\n",
+       "       -0.12063547,  0.17469123,  0.1844825 , -0.16626698, -0.1630048 ,\n",
+       "       -0.14947087, -0.19697879, -0.1271283 , -0.0283153 , -0.10841243],\n",
+       "      dtype=float32)"
+      ]
+     },
+     "execution_count": 230,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "weights_embedding[token_horrible]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Sorted Words\n",
+    "\n",
+    "We can also sort all the words in the vocabulary according to their \"similarity\" in the embedding-space. We want to see if words that have similar embedding-vectors also have similar meanings.\n",
+    "\n",
+    "Similarity of embedding-vectors can be measured by different metrics, e.g. Euclidean distance or cosine distance.\n",
+    "\n",
+    "We have a helper-function for calculating these distances and printing the words in sorted order."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 231,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def print_sorted_words(word, metric='cosine'):\n",
+    "    \"\"\"\n",
+    "    Print the words in the vocabulary sorted according to their\n",
+    "    embedding-distance to the given word.\n",
+    "    Different metrics can be used, e.g. 'cosine' or 'euclidean'.\n",
+    "    \"\"\"\n",
+    "\n",
+    "    # Get the token (i.e. integer ID) for the given word.\n",
+    "    token = tokenizer.word_index[word]\n",
+    "\n",
+    "    # Get the embedding for the given word. Note that the\n",
+    "    # embedding-weight-matrix is indexed by the word-tokens\n",
+    "    # which are integer IDs.\n",
+    "    embedding = weights_embedding[token]\n",
+    "\n",
+    "    # Calculate the distance between the embeddings for\n",
+    "    # this word and all other words in the vocabulary.\n",
+    "    distances = cdist(weights_embedding, [embedding],\n",
+    "                      metric=metric).T[0]\n",
+    "    \n",
+    "    # Get an index sorted according to the embedding-distances.\n",
+    "    # These are the tokens (integer IDs) for words in the vocabulary.\n",
+    "    sorted_index = np.argsort(distances)\n",
+    "    \n",
+    "    # Sort the embedding-distances.\n",
+    "    sorted_distances = distances[sorted_index]\n",
+    "    \n",
+    "    # Sort all the words in the vocabulary according to their\n",
+    "    # embedding-distance. This is a bit excessive because we\n",
+    "    # will only print the top and bottom words.\n",
+    "    sorted_words = [inverse_map[token] for token in sorted_index\n",
+    "                    if token != 0]\n",
+    "\n",
+    "    # Helper-function for printing words and embedding-distances.\n",
+    "    def _print_words(words, distances):\n",
+    "        for word, distance in zip(words, distances):\n",
+    "            print(\"{0:.3f} - {1}\".format(distance, word))\n",
+    "\n",
+    "    # Number of words to print from the top and bottom of the list.\n",
+    "    k = 10\n",
+    "\n",
+    "    print(\"Distance from '{0}':\".format(word))\n",
+    "\n",
+    "    # Print the words with smallest embedding-distance.\n",
+    "    _print_words(sorted_words[0:k], sorted_distances[0:k])\n",
+    "\n",
+    "    print(\"...\")\n",
+    "\n",
+    "    # Print the words with highest embedding-distance.\n",
+    "    _print_words(sorted_words[-k:], sorted_distances[-k:])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can then print the words that are near and far from the word 'great' in terms of their vector-embeddings. Note that these may change each time you train the model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 232,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Distance from 'great':\n",
+      "0.000 - great\n",
+      "0.045 - thanks\n",
+      "0.055 - thank\n",
+      "0.057 - gorgeous\n",
+      "0.061 - beautiful\n",
+      "0.063 - odcf7dzijz\n",
+      "0.064 - forward\n",
+      "0.066 - excited\n",
+      "0.067 - good\n",
+      "0.067 - luck\n",
+      "...\n",
+      "1.868 - rooms\n",
+      "1.869 - preaching\n",
+      "1.870 - 😁😁😁\n",
+      "1.871 - cleaner\n",
+      "1.872 - 🌻\n",
+      "1.875 - secrets\n",
+      "1.875 - reflexion\n",
+      "1.875 - spotify's\n",
+      "1.879 - matte\n",
+      "1.884 - rodstewart\n"
+     ]
+    }
+   ],
+   "source": [
+    "print_sorted_words('great', metric='cosine')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Similarly, we can print the words that are near and far from the word 'worst' in terms of their vector-embeddings."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 233,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Distance from 'worst':\n",
+      "0.000 - worst\n",
+      "0.046 - blame\n",
+      "0.047 - horrible\n",
+      "0.048 - tragic\n",
+      "0.049 - disappointed\n",
+      "0.053 - unfortunate\n",
+      "0.054 - stupidity\n",
+      "0.054 - shrxztbjuz\n",
+      "0.055 - shocking\n",
+      "0.055 - disgrace\n",
+      "...\n",
+      "1.889 - mattymoe55\n",
+      "1.891 - official\n",
+      "1.891 - 29\n",
+      "1.892 - thehill\n",
+      "1.893 - amnesty\n",
+      "1.894 - 16gb\n",
+      "1.895 - fantasy\n",
+      "1.896 - causewereguys\n",
+      "1.903 - chanelpuke\n",
+      "1.910 - kelsi\n"
+     ]
+    }
+   ],
+   "source": [
+    "print_sorted_words('worst', metric='cosine')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 234,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      " This finished at  2021-05-05 13:14:02.756128\n"
+     ]
+    }
+   ],
+   "source": [
+    "import datetime\n",
+    "now = datetime.datetime.now()\n",
+    "print(\"\\n This finished at \", now)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Conclusion\n",
+    "\n",
+    "This tutorial showed the basic methods for doing Natural Language Processing (NLP) using a Recurrent Neural Network with integer-tokens and an embedding layer. This was used to do sentiment analysis of movie reviews from IMDB. It works reasonably well if the hyper-parameters are chosen properly. But it is important to understand that this is not human-like comprehension of text. The system does not have any real understanding of the text. It is just a clever way of doing pattern-recognition."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Exercises\n",
+    "\n",
+    "These are a few suggestions for exercises that may help improve your skills with TensorFlow. It is important to get hands-on experience with TensorFlow in order to learn how to use it properly.\n",
+    "\n",
+    "You may want to backup this Notebook before making any changes.\n",
+    "\n",
+    "* Run more training-epochs. Does it improve performance?\n",
+    "* If your model overfits the training-data, try using dropout-layers and dropout inside the GRU.\n",
+    "* Increase or decrease the number of words in the vocabulary. This is done when the `Tokenizer` is initialized. Does it affect performance?\n",
+    "* Increase the size of the embedding-vectors to e.g. 200. Does it affect performance?\n",
+    "* Try varying all the different hyper-parameters for the Recurrent Neural Network.\n",
+    "* Use Bayesian Optimization from Tutorial #19 to find the best choice of hyper-parameters.\n",
+    "* Use 'post' for padding and truncating in `pad_sequences()`. Does it affect the performance?\n",
+    "* Use individual characters instead of tokenized words as the vocabulary. You can then use one-hot encoded vectors for each character instead of using the embedding-layer.\n",
+    "* Use `model.fit_generator()` instead of `model.fit()` and make your own data-generator, which creates a batch of data using a random subset of `x_train_tokens`. The sequences must be padded so they all match the length of the longest sequence.\n",
+    "* Explain to a friend how the program works."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## License (MIT)\n",
+    "\n",
+    "Copyright (c) 2018 by [Magnus Erik Hvass Pedersen](http://www.hvass-labs.org/)\n",
+    "\n",
+    "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n",
+    "\n",
+    "The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n",
+    "\n",
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "anaconda-cloud": {},
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}

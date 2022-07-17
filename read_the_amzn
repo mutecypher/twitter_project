@@ -1,0 +1,20 @@
+import pandas as pd
+
+headley2 = ['index', 'created_at', 'user_id', 'text', 'source',
+            'lang', 'likes', 'retweets']
+
+ricky_bobby = pd.read_table(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_df_api2.csv', sep=',', header='infer')
+print(ricky_bobby.head())
+print("the initial shape is ", ricky_bobby.shape)
+##
+ricky_bobby = ricky_bobby[ricky_bobby['lang'] == 'en']
+ricky_bobby = ricky_bobby.drop_duplicates()
+
+ricky_bobby.reset_index(inplace=True, drop=True)
+
+
+print("the final shape is ", ricky_bobby.shape)
+ricky_bobby.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_df_api2.csv', index=False)
+print("saulgoodman")
