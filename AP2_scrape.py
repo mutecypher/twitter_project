@@ -15,7 +15,7 @@ API_key = 'OEnnzk5ro76PdhQHTJVxa3qTv'
 # API_key = 'qchdahMH5QJp0xd1dPQPTdxAJ'
 API_SECRET_KEY = 'sj4lfiejDGosykNA62YaHqBP1J9RyESbMqKboxQp9sW51gJylC'
 
-how_many_tries = 32
+how_many_tries = 48
 items_to_get = 100
 whats_today = datetime.datetime.now()
 # whats_today = whats_today.strftime("%Y%m%d%H%M")
