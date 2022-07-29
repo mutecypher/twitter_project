@@ -15,7 +15,7 @@ API_key = 'OEnnzk5ro76PdhQHTJVxa3qTv'
 # API_key = 'qchdahMH5QJp0xd1dPQPTdxAJ'
 API_SECRET_KEY = 'sj4lfiejDGosykNA62YaHqBP1J9RyESbMqKboxQp9sW51gJylC'
 
-how_many_tries = 48
+how_many_tries = 36
 items_to_get = 100
 whats_today = datetime.datetime.now()
 # whats_today = whats_today.strftime("%Y%m%d%H%M")
@@ -39,7 +39,7 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
 
     tweetz = []
     for i in range(num_hrs):
-        time.sleep(0.1)
+        time.sleep(2.0)
         strt_date = datetime.datetime.now() - datetime.timedelta(hours=i)
         stp_date = datetime.datetime.now() - datetime.timedelta(hours=i+1)
 
