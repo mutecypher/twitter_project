@@ -9,13 +9,13 @@ import pandas as pd
 print("pandas version is ", pd.__version__)
 
 
-my_bearer_token = 'AAAAAAAAAAAAAAAAAAAAADigdwEAAAAAyGEJIbrn1BPYIMXFEiICWFaB1%2F0%3DW2q0OE9Bf0w1qZGvRwwiwwE6rreDjJP3MaIn1abqaMTuxFFOSE'
+my_bearer_token = 'AAAAAAAAAAAAAAAAAAAAAJPKfgEAAAAA991Zypzaibyf3gOAi2RHTKScmTs%3DjBQTJYUXKF232qhnLdvk59QqTBTl7sRWJ5vu1hUwyul0gXcakM'
 
-API_key = 'OEnnzk5ro76PdhQHTJVxa3qTv'
+API_key = 'wU4QrxQb8lUfkPNemhcXITXoM'
 # API_key = 'qchdahMH5QJp0xd1dPQPTdxAJ'
-API_SECRET_KEY = 'sj4lfiejDGosykNA62YaHqBP1J9RyESbMqKboxQp9sW51gJylC'
+API_SECRET_KEY = 'sTqvN6VNo6RZMt5AWdbFQdnpIWgOqqV5AQ9Vr8DrLNurhiJwR8'
 
-how_many_tries = 72
+how_many_tries = 24
 items_to_get = 100
 whats_today = datetime.datetime.now()
 # whats_today = whats_today.strftime("%Y%m%d%H%M")
@@ -39,7 +39,7 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
 
     tweetz = []
     for i in range(num_hrs):
-        time.sleep(1.0)
+        time.sleep(0.5)
         strt_date = datetime.datetime.now() - datetime.timedelta(hours=i)
         stp_date = datetime.datetime.now() - datetime.timedelta(hours=i+1)
 
