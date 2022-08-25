@@ -9,6 +9,8 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.ipynb
+*.csv
 /TFlow
 /19_logs
 
