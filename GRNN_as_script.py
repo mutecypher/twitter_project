@@ -32,247 +32,63 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 
-# %% [markdown]
-# We need to import several things from Keras.
-
-# %%
-
-
-# %% [markdown]
-# This was developed using Python 3.6 (Anaconda) and package versions:
-
-# %%
-tf.__version__
-
-# %%
-tf.keras.__version__
-
-# %% [markdown]
-# ## Load Data
-#
-# For Training use the twitter data set with sentiment analysis
-
-# %%
-
 file = '/Volumes/Elements/GitHub/twitter-project/Data_Files/twitter_sentiment_learn.csv'
 
 learning_df = pd.read_csv(file)
 print(learning_df.shape)
 print(learning_df.head())
 
-# %% [markdown]
-# Change this if you want the files saved in another directory.
 
-# %% [markdown]
-# ## Load the training- and test-sets.
-
-# %%
 x = learning_df['text'].to_list()
 
 
-##learning_df[["bad", "meh", "good"]] = 0
-# for i in range(learning_df.shape[0]):
-# if (learning_df.loc[i,"NEG"] >= learning_df.loc[i,"NEU"]) and (learning_df.loc[i,"NEG"] >= learning_df.loc[i,"POS"]):
-##        learning_df.loc[i,"bad"] = 1
-# elif (learning_df.loc[i,"NEU"] >= learning_df.loc[i,"NEG"]) and (learning_df.loc[i,"NEU"] >= learning_df.loc[i,"POS"]):
-##        learning_df.loc[i,"meh"] = 1
-# else:
-##        learning_df.loc[i,"good"] = 1
-
-##y = learning_df[["bad", "meh", "good"]]
-
 y = learning_df[["NEG", "NEU", "POS"]]
 
-##y = tarmac
 
 x_train, x_test, y_train, y_test = sk.train_test_split(
     x, y, test_size=0.25, random_state=42)
 
-# Convert to numpy arrays.
 y_train = np.array(y_train)
 y_test = np.array(y_test)
-# print(x[1])
 
 print("Train-set size: ", len(x_train))
 print("Test-set size:  ", len(x_test))
 
 data_text = x_train + x_test
 
-# %%
+
 data_text = x_train + x_test
 
-# %% [markdown]
-# Print an example from the training-set to see that the data looks correct.
-
-# %%
 print("\n", x_train[1])
 print("\n", learning_df.head())
 print("\n", y_train[1:5])
 
-# %% [markdown]
-# The true "class" is a sentiment of the movie-review. It is a value of 0.0 for a negative sentiment and 1.0 for a positive sentiment. In this case the review is positive.
 
-# %%
 y_train[1]
 
-# %% [markdown]
-# ## Tokenizer
-#
-# A neural network cannot work directly on text-strings so we must convert it somehow. There are two steps in this conversion, the first step is called the "tokenizer" which converts words to integers and is done on the data-set before it is input to the neural network. The second step is an integrated part of the neural network itself and is called the "embedding"-layer, which is described further below.
-#
-# We may instruct the tokenizer to only use e.g. the 10000 most popular words from the data-set.
+num_words = 10000
 
-# %%
-# can be played with
 
-num_words = 30000
+def toke_toke(num_words):
+    tokenizer = Tokenizer(num_words=num_words)
+    tokenizer.fit_on_texts(data_text)
+    x_train_tokens = tokenizer.texts_to_sequences(x_train)
+    x_test_tokens = tokenizer.texts_to_sequences(x_test)
+    x_train_tokens = tokenizer.texts_to_sequences(x_train)
+    x_test_tokens = tokenizer.texts_to_sequences(x_test)
+    num_tokens = [len(tokens) for tokens in x_train_tokens + x_test_tokens]
+    num_tokens = np.array(num_tokens)
+    max_tokens = np.mean(num_tokens) + 3 * np.std(num_tokens)
+    max_tokens = math.floor(max_tokens)
+    np.sum(num_tokens < max_tokens) / len(num_tokens)
+    pad = 'pre'
 
-tokenizer = Tokenizer(num_words=num_words)
-
-# %%time
-tokenizer.fit_on_texts(data_text)
-
-x_train_tokens = tokenizer.texts_to_sequences(x_train)
-
-x_test_tokens = tokenizer.texts_to_sequences(x_test)
-
-# %% [markdown]
-# The tokenizer can then be "fitted" to the data-set. This scans through all the text and strips it from unwanted characters such as punctuation, and also converts it to lower-case characters. The tokenizer then builds a vocabulary of all unique words along with various data-structures for accessing the data.
-#
-# Note that we fit the tokenizer on the entire data-set so it gathers words from both the training- and test-data. This is OK as we are merely building a vocabulary and want it to be as complete as possible. The actual neural network will of course only be trained on the training-set.
-
-# %% [markdown]
-# If you want to use the entire vocabulary then set `num_words=None` above, and then it will automatically be set to the vocabulary-size here. (This is because of Keras' somewhat awkward implementation.)
-
-# %%
-print(num_words)
-if num_words is None:
-    num_words = len(tokenizer.word_index)
-    print("the num_words is ", num_words)
-
-# %% [markdown]
-# We can then inspect the vocabulary that has been gathered by the tokenizer. This is ordered by the number of occurrences of the words in the data-set. These integer-numbers are called word indices or "tokens" because they uniquely identify each word in the vocabulary.
-
-# %% [markdown]
-# We can then use the tokenizer to convert all texts in the training-set to lists of these tokens.
-
-# %%
-x_train_tokens = tokenizer.texts_to_sequences(x_train)
-
-# %% [markdown]
-# For example, here is a text from the training-set:
-
-# %%
-# print("\n",learning_df.loc[160625,:])
-print("\n", x_train_tokens)
-# print(y[1])
-
-# %% [markdown]
-# This text corresponds to the following list of tokens:
-
-# %%
-np.array(x_train_tokens[1])
-
-# %% [markdown]
-# We also need to convert the texts in the test-set to tokens.
-
-# %%
-x_test_tokens = tokenizer.texts_to_sequences(x_test)
-
-# %% [markdown]
-# ## Padding and Truncating Data
-#
-# The Recurrent Neural Network can take sequences of arbitrary length as input, but in order to use a whole batch of data, the sequences need to have the same length. There are two ways of achieving this: (A) Either we ensure that all sequences in the entire data-set have the same length, or (B) we write a custom data-generator that ensures the sequences have the same length within each batch.
-#
-# Solution (A) is simpler but if we use the length of the longest sequence in the data-set, then we are wasting a lot of memory. This is particularly important for larger data-sets.
-#
-# So in order to make a compromise, we will use a sequence-length that covers most sequences in the data-set, and we will then truncate longer sequences and pad shorter sequences.
-#
-# First we count the number of tokens in all the sequences in the data-set.
-
-# %%
-num_tokens = [len(tokens) for tokens in x_train_tokens + x_test_tokens]
-num_tokens = np.array(num_tokens)
-
-# %% [markdown]
-# The average number of tokens in a sequence is:
-
-# %%
-np.mean(num_tokens)
-
-# %% [markdown]
-# The maximum number of tokens in a sequence is:
-
-# %%
-np.max(num_tokens)
-
-# %% [markdown]
-# ### The max number of tokens we will allow is set to the average plus 3 standard deviations.
-
-# %%
-max_tokens = np.mean(num_tokens) + 3 * np.std(num_tokens)
-##max_tokens = np.max(num_tokens)
-max_tokens = math.floor(max_tokens)
-
-# %% [markdown]
-# This covers about 95% of the data-set.
-
-# %%
-np.sum(num_tokens < max_tokens) / len(num_tokens)
-
-# %% [markdown]
-# When padding or truncating the sequences that have a different length, we need to determine if we want to do this padding or truncating 'pre' or 'post'. If a sequence is truncated, it means that a part of the sequence is simply thrown away. If a sequence is padded, it means that zeros are added to the sequence.
-#
-# So the choice of 'pre' or 'post' can be important because it determines whether we throw away the first or last part of a sequence when truncating, and it determines whether we add zeros to the beginning or end of the sequence when padding. This may confuse the Recurrent Neural Network.
-
-# %%
-pad = 'pre'
-
-# %%
-x_train_pad = pad_sequences(x_train_tokens, maxlen=max_tokens,
-                            padding=pad, truncating=pad)
-
-# %%
-x_test_pad = pad_sequences(x_test_tokens, maxlen=max_tokens,
-                           padding=pad, truncating=pad)
-
-# %% [markdown]
-# We have now transformed the training-set into one big matrix of integers (tokens) with this shape:
-
-# %%
-x_train_pad.shape
-
-# %% [markdown]
-# The matrix for the test-set has the same shape:
-
-# %%
-x_test_pad.shape
-
-# %% [markdown]
-# For example, we had the following sequence of tokens above:
-
-# %%
-np.array(x_train_tokens[1])
-
-# %% [markdown]
-# This has simply been padded to create the following sequence. Note that when this is input to the Recurrent Neural Network, then it first inputs a lot of zeros. If we had padded 'post' then it would input the integer-tokens first and then a lot of zeros. This may confuse the Recurrent Neural Network.
-
-# %%
-x_train_pad[1]
-
-# %% [markdown]
-# ## Tokenizer Inverse Map
-#
-# For some strange reason, the Keras implementation of a tokenizer does not seem to have the inverse mapping from integer-tokens back to words, which is needed to reconstruct text-strings from lists of tokens. So we make that mapping here.
-
-# %%
-idx = tokenizer.word_index
-inverse_map = dict(zip(idx.values(), idx.keys()))
-
-# %% [markdown]
-# Helper-function for converting a list of tokens back to a string of words.
-
-# %%
+    x_train_pad = pad_sequences(x_train_tokens, maxlen=max_tokens,
+                                padding=pad, truncating=pad)
+    x_test_pad = pad_sequences(x_test_tokens, maxlen=max_tokens,
+                               padding=pad, truncating=pad)
+    idx = tokenizer.word_index
+    inverse_map = dict(zip(idx.values(), idx.keys()))
 
 
 def tokens_to_string(tokens):
@@ -284,134 +100,50 @@ def tokens_to_string(tokens):
 
     return text
 
-# %% [markdown]
-# For example, this is the original text from the data-set:
 
-
-# %%
-x_train[1]
-
-# %% [markdown]
-# We can recreate this text except for punctuation and other symbols, by converting the list of tokens back to words:
-
-# %%
-tokens_to_string(x_train_tokens[1])
-
-# %% [markdown]
-# ## Create the Recurrent Neural Network
-#
-# We are now ready to create the Recurrent Neural Network (RNN). We will use the Keras API for this because of its simplicity. See Tutorial #03-C for a tutorial on Keras.
-
-# %%
-model = Sequential()
-
-# %% [markdown]
-# The first layer in the RNN is a so-called Embedding-layer which converts each integer-token into a vector of values. This is necessary because the integer-tokens may take on values between 0 and 10000 for a vocabulary of 10000 words. The RNN cannot work on values in such a wide range. The embedding-layer is trained as a part of the RNN and will learn to map words with similar semantic meanings to similar embedding-vectors, as will be shown further below.
-#
-# First we define the size of the embedding-vector for each integer-token. In this case we have set it to 8, so that each integer-token will be converted to a vector of length 8. The values of the embedding-vector will generally fall roughly between -1.0 and 1.0, although they may exceed these values somewhat.
-#
-# The size of the embedding-vector is typically selected between 100-300, but it seems to work reasonably well with small values for Sentiment Analysis.
-
-# %%
-figure_of_merit = 2 * max_tokens  # was 100
-first_layer = math.floor(max_tokens/2) + 2
-second_layer = math.floor(max_tokens/3) + 2
-third_layer = math.floor(max_tokens/4) + 3
-fourth_layer = math.floor(max_tokens/5) + 3
-embedding_size = figure_of_merit
-
-# %% [markdown]
-# The embedding-layer also needs to know the number of words in the vocabulary (`num_words`) and the length of the padded token-sequences (`max_tokens`). We also give this layer a name because we need to retrieve its weights further below.
-
-# %%
-model.add(Embedding(input_dim=num_words,  # was num_words
-                    output_dim=embedding_size,
-                    input_length=max_tokens,
-                    name='layer_embedding'))
-# model.add(Flatten())
-
-# model = tf.keras.Sequential([
-##    tf.keras.layers.Embedding(input_dim = num_words, output_dim = embedding_size, input_length=max_tokens),
-# tf.keras.layers.Flatten(),
-##    tf.keras.layers.Dense(30, activation='relu'),
-##    tf.keras.layers.Dense(60, activation='sigmoid')
-##    tf.keras.layers.Dense(15, activation='relu')
-##    tf.keras.layers.Dense(3, activation='sigmoid')
-# ])
-
-# %% [markdown]
-# We can now add the first Gated Recurrent Unit (GRU) to the network. This will have 16 outputs. Because we will add a second GRU after this one, we need to return sequences of data because the next GRU expects sequences as its input.
-
-# %%
-model.add(GRU(units=first_layer,
+def make_model(, num_words, max_tokens):
+    model = Sequential()
+    figure_of_merit = 2 * max_tokens  # was 100
+    first_layer = math.floor(max_tokens/2) + 2
+    second_layer = math.floor(max_tokens/3) + 2
+    third_layer = math.floor(max_tokens/4) + 3
+    fourth_layer = math.floor(max_tokens/5) + 3
+    embedding_size = figure_of_merit
+    model.add(Embedding(input_dim=num_words,  # was num_words
+                        output_dim=embedding_size,
+                        input_length=max_tokens,
+                        name='layer_embedding'))
+    model.add(GRU(units=first_layer,
               activation='tanh',  # was tanh
               recurrent_activation='softmax',
               return_sequences=True))
-##model.add(Dense(first_layer, activation='softmax'))
-
-# %% [markdown]
-# This adds the second GRU with 8 output units. This will be followed by another GRU so it must also return sequences.
-
-# %%
-model.add(GRU(units=second_layer, activation='tanh',  # was tanh
+    model.add(GRU(units=second_layer, activation='tanh',  # was tanh
               recurrent_activation='softmax',
               return_sequences=True))
-##model.add(Dense(second_layer, activation='sigmoid'))
-
-# %% [markdown]
-# This adds the third and final GRU with 4 output units. This will be followed by a dense-layer, so it should only give the final output of the GRU and not a whole sequence of outputs.
-
-# %%
-model.add(GRU(units=third_layer, activation='tanh',  # was tanh
+    model.add(GRU(units=third_layer, activation='tanh',  # was tanh
               recurrent_activation='softmax',
               return_sequences=True))
-model.add(GRU(units=fourth_layer, activation='tanh',  # was tanh
+    model.add(GRU(units=fourth_layer, activation='tanh',  # was tanh
               recurrent_activation='sigmoid', return_sequences=False))
+    model.add(Dense(3, activation='softmax'))  # was 3
+    learning_rat = 1e-3
+    optimizer = Nadam(learning_rate=learning_rat)
 
-# %% [markdown]
-# ## Add a fully-connected / dense layer which computes a value between 0 and 1.0 that will be used as the classification output.
+    model.compile(loss='binary_crossentropy',
+                  optimizer=optimizer,
+                  metrics=['accuracy'])
 
-# %%
-model.add(Dense(3, activation='softmax'))  # was 3
-
-# %% [markdown]
-# Use the Adam optimizer with the given learning-rate.
-
-# %%
-learning_rat = 1e-3
-optimizer = Nadam(learning_rate=learning_rat)
-
-# %% [markdown]
-# Compile the Keras model so it is ready for training.
-
-# %%
-model.compile(loss='binary_crossentropy',
-              optimizer=optimizer,
-              metrics=['accuracy'])
-# model.compile(loss='binary_crossentropy',
-# optimizer=optimizer,
-# metrics=['accuracy'])
-
-# %%
-model.summary()
-
-# %% [markdown]
-# ## make callbacks
-
-# %%
-callbackx = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy',
-                                             patience=1,
-                                             restore_best_weights=True)
+    print(model.summary())
 
 
 class myCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if(logs.get('val_accuracy') > 0.95):
+        if (logs.get('val_accuracy') > 0.95):
             print(
                 "\nReached 95% val_accuracy, so slowing the learning rate and keeping Nadam optimizer.")
             optimizer = Nadam(learning_rate=0.2*learning_rat)
             self.model.stop_training = False
-        if(logs.get('val_accuracy') > 0.970):
+        if (logs.get('val_accuracy') > 0.970):
             print(
                 "\nReached 97% val_accuracy, so slowing the learning rate and keeping Nadam optimizer.")
             optimizer = Nadam(learning_rate=0.1*learning_rat)
@@ -419,24 +151,10 @@ class myCallback(tf.keras.callbacks.Callback):
 
 
 call_it = myCallback()
+callbackx = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy',
+                                             patience=1,
+                                             restore_best_weights=True)
 
-# %% [markdown]
-# ## Train the Recurrent Neural Network
-#
-# We can now train the model. Note that we are using the data-set with the padded sequences. We use 5% of the training-set as a small validation-set, so we have a rough idea whether the model is generalizing well or if it is perhaps over-fitting to the training-set.
-
-# %% [markdown]
-# %%time
-# model.fit(x_train_pad, y_train,
-#           validation_split=0.15, epochs=10, batch_size= 256,
-#             callbacks = [callbackx, call_it])
-
-# %% [markdown]
-# ## Performance on Test-Set
-#
-# Now that the model has been trained we can calculate its classification accuracy on the test-set.
-
-# %%
 
 model.fit(x_train_pad, y_train,
           validation_split=0.25, epochs=15, batch_size=200, verbose=2,
