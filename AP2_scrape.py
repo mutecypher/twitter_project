@@ -10,14 +10,14 @@ print("pandas version is ", pd.__version__)
 # new stuff
 
 
-my_bearer_token = 'AAAAAAAAAAAAAAAAAAAAAJPKfgEAAAAA991Zypzaibyf3gOAi2RHTKScmTs%3DjBQTJYUXKF232qhnLdvk59QqTBTl7sRWJ5vu1hUwyul0gXcakM'
+my_bearer_token = 'AAAAAAAAAAAAAAAAAAAAADigdwEAAAAAk0reVsQZxlVKFZcRJzD7SzLifgc%3DpL8G0gCQASu3RQiehRg9aBfXyK1PeLAbrLF1FZzzX2tGK36xk8'
 
 API_key = 'wU4QrxQb8lUfkPNemhcXITXoM'
 # API_key = 'qchdahMH5QJp0xd1dPQPTdxAJ'
 API_SECRET_KEY = 'sTqvN6VNo6RZMt5AWdbFQdnpIWgOqqV5AQ9Vr8DrLNurhiJwR8'
 
-how_many_tries = 48
-items_to_get = 100
+how_many_tries = 24
+items_to_get = 10
 whats_today = datetime.datetime.now()
 # whats_today = whats_today.strftime("%Y%m%d%H%M")
 
@@ -35,6 +35,10 @@ minus_thirty = datetime.datetime.now() - datetime.timedelta(days=30)
 print(sys.version)
 print("uncorrected today's date is ", whats_today)
 
+##twigs = tweepy.Client(bearer_token=my_bearer_token)
+##tweet_dog = twigs.search_recent_tweets(query='stars', max_results=8)
+##print("tweet dog is ", tweet_dog)
+
 
 def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
 
@@ -51,9 +55,7 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
 # tweets = api.search_tweets(q = search_words, lang = "en", count = items_to_get )
         tweets = client.search_recent_tweets(query=search_words, start_time=stp_date, end_time=strt_date,
                                              tweet_fields=[
-                                                 'id', 'text', 'created_at', 'lang', 'public_metrics', 'author_id'],
-
-                                             max_results=num_tweets)
+                                                 'id', 'text', 'created_at', 'lang', 'public_metrics', 'author_id'], max_results=num_tweets)
 
         for tweet in tweets.data:
             tweet_info = {
