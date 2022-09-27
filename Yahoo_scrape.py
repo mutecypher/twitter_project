@@ -10,7 +10,7 @@ whats_today = datetime.datetime.now().date()
 # add a day for every day past October 31, 2021 - was 586
 
 # for August 2022 plus day of month
-minus_fifteen_years = whats_today - datetime.timedelta(days=889 + 12)
+minus_fifteen_years = whats_today - datetime.timedelta(days=889 + 26)
 
 ##whats_today = whats_today.date()
 ##minus_three = minus_three.date
