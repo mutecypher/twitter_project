@@ -372,14 +372,14 @@ def fitness(learning_rate,
         write_images=False)
 
     callbackx = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy',
-                                                 patience=0,
+                                                 patience=1,
                                                  restore_best_weights=True)
 
     history = model.fit(x=x_train_pad,
                         y=y_train,
-                        epochs=8,
+                        epochs=20,
                         batch_size=batchez_yo,
-                        validation_split=0.3,
+                        validation_split=0.25,
                         callbacks=[callback_log, callbackx])
 
     # Get the classification accuracy on the validation-set

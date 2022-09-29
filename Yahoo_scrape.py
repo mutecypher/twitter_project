@@ -10,7 +10,7 @@ whats_today = datetime.datetime.now().date()
 # add a day for every day past October 31, 2021 - was 586
 
 # for August 2022 plus day of month
-minus_fifteen_years = whats_today - datetime.timedelta(days=889 + 26)
+minus_fifteen_years = whats_today - datetime.timedelta(days=889 + 28)
 
 ##whats_today = whats_today.date()
 ##minus_three = minus_three.date
@@ -550,7 +550,7 @@ insp_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/insp_stock_df.csv", header=True)
 crwd_df = namez[11]
 crwd_df.to_csv(
-    "/Volumes/Elements/GitHub/twitter-project/Data_Filescrwd_stock_df.csv", header=True)
+    "/Volumes/Elements/GitHub/twitter-project/Data_Files/crwd_stock_df.csv", header=True)
 clf_df = namez[12]
 clf_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/clf_stock_df.csv", header=True)
