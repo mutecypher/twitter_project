@@ -9,8 +9,8 @@ whats_today = datetime.datetime.now().date()
 
 # add a day for every day past October 31, 2021 - was 586
 
-# for August 2022 plus day of month
-minus_fifteen_years = whats_today - datetime.timedelta(days=859 + 15)
+# for November 2022 plus day of month
+minus_fifteen_years = whats_today - datetime.timedelta(days=981 + 7)
 
 ##whats_today = whats_today.date()
 ##minus_three = minus_three.date
@@ -31,9 +31,8 @@ for market in marketz:
     yahoo_financials = YahooFinancials(market)
 
     data = yahoo_financials.get_historical_price_data(start_date=minus_fifteen_years,
-                                                      end_date=whats_today,
-                                                      time_interval='daily')
-
+                                                      end_date=whats_today, time_interval='daily')
+    print("got to here")
     namez[i] = pd.DataFrame(data[market]['prices'])
     namez[i] = namez[i].drop('date', axis=1)
     print(namez[i].shape)

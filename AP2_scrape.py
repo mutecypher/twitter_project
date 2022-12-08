@@ -9,11 +9,11 @@ import pandas as pd
 print("pandas version is ", pd.__version__)
 
 
-my_bearer_token = 'AAAAAAAAAAAAAAAAAAAAAJPKfgEAAAAA991Zypzaibyf3gOAi2RHTKScmTs%3DjBQTJYUXKF232qhnLdvk59QqTBTl7sRWJ5vu1hUwyul0gXcakM'
+my_bearer_token = 'AAAAAAAAAAAAAAAAAAAAADigdwEAAAAAEKBUHfLmBDq2RgBD01uOssfXi%2BI%3DNh7TYKOfjoc0k5UZgeT8oc0eTomCprqj7hnmNST5bbfBEBzq6A'
 
-API_key = 'wU4QrxQb8lUfkPNemhcXITXoM'
+API_key = '2BYhPkDzJcSNcfNTpCqxgqqtB'
 # API_key = 'qchdahMH5QJp0xd1dPQPTdxAJ'
-API_SECRET_KEY = 'sTqvN6VNo6RZMt5AWdbFQdnpIWgOqqV5AQ9Vr8DrLNurhiJwR8'
+API_SECRET_KEY = 'w6gotTmFbLULViLejmsgacib7mhjKK6EARvlNC6ZoTwPV3X6Ot'
 
 how_many_tries = 24
 items_to_get = 100
