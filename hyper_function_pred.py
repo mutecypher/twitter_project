@@ -68,7 +68,9 @@ def assign_scores(filington, colington):
 
 def trans_scores(filington, colington):
     sentiment_pipeline = pipeline(
-        'sentiment-analysis', model="finiteautomata/bertweet-base-sentiment-analysis")
+        'sentiment-analysis',
+        model="finiteautomata/bertweet-base-sentiment-analysis")
+    # 'distilbert-base-cased-distilled-squad', tokenizer='bert-base-cased')
     filington.columns = colington
     filington = clean_the_text_col(filington)
     text_list = filington['text'].astype(str).tolist()
@@ -120,15 +122,15 @@ print(amzn_df2_nn.head())
 print()
 
 strt = datetime.datetime.now()
-# amzn_df_tn = trans_scores(amzn_df, am_columns)
+amzn_df_tn = trans_scores(amzn_df, am_columns)
 end = datetime.datetime.now()
 print("the  time for the first amzn_df_tn is: ", end - strt)
-# amzn_df_tn = pd.DataFrame.from_dict(amzn_json_tn, orient='columns')
-# amzn_df_tn.to_csv(
-# '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv', header=True)
+##amzn_df_tn = pd.DataFrame.from_dict(amzn_json_tn, orient='columns')
+amzn_df_tn.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv', header=True)
 print()
-# print("now the transformers version")
-# print("the Amazon transformers head is " ,amzn_df_tn.head())
+print("now the transformers version")
+print("the Amazon transformers head is ", amzn_df_tn.head())
 print()
 #######
 
@@ -221,7 +223,7 @@ KMI_columns = ['created_at', 'text', 'retweet_count', 'user_id',
 
 KMI_df = pd.read_csv(KMI_file, header=0, index_col=0, parse_dates=True)
 
-KMI_df.columns = common_cols
+KMI_df.columns = KMI_columns
 
 strt = datetime.datetime.now()
 KMI_df_nn = assign_scores(KMI_df, common_cols)
@@ -239,13 +241,13 @@ print()
 ####
 
 strt = datetime.datetime.now()
-KMI_df_tn = trans_scores(KMI_df, common_cols)
+##KMI_df_tn = trans_scores(KMI_df, common_cols)
 end = datetime.datetime.now()
 
 print("the  transformers version", KMI_df_tn.head())
 
-KMI_df_tn.to_csv(
-    '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored.csv', header=True)
+# KMI_df_tn.to_csv(
+# '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored.csv', header=True)
 
 print()
 print("now the transformers version and it took ", end - strt, "to run")

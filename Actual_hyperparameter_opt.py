@@ -437,6 +437,7 @@ def fitness(learning_rate,
 
 n_cally = 125
 n = 0
+
 begy = datetime.datetime.now()
 search_result = gp_minimize(func=fitness,
                             dimensions=dimensions,
