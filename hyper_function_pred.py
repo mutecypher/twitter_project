@@ -1,4 +1,5 @@
 
+from nltk.corpus import stopwords
 import datetime
 import pandas as pd
 from tensorflow.keras.models import load_model
@@ -12,6 +13,8 @@ import tensorflow as tf
 import re
 import random
 from transformers import pipeline
+
+
 max_tokens = 30
 
 pad = 'pre'
@@ -26,12 +29,13 @@ loaded_model = load_model(
 
 
 def clean_it_up(text):
-    texty_yo = re.sub(r'https?:\/\/.\S+', "", text)
+    texty_yo = re.sub(r'http?:\/\/.\S+', "", text)
     texty_yo = re.sub(r'#', '', texty_yo)
     texty_yo = re.sub(r'^RT[\s]+', '', texty_yo)
     texty_yo = re.sub(r'[^a-zA-Z ]+', '', texty_yo)
     texty_yo = re.sub(r' +', ' ', texty_yo)
     texty_yo = texty_yo.lower()
+    texty_yo = texty_yo[0: 300]
     return texty_yo
 
 
@@ -46,6 +50,9 @@ def clean_output(text):
 def clean_the_text_col(df):
     df['text'] = df['text'].apply(clean_output)
     df['text'] = df['text'].apply(clean_it_up)
+    ##stop_words = stopwords.words('english')
+    # df['text'] = df['text'].apply(
+    # lambda x: ' '.join([word for word in x.split() if word not in (stop_words)]))
 
     return df
 
@@ -75,13 +82,33 @@ def trans_scores(filington, colington):
     filington = clean_the_text_col(filington)
     text_list = filington['text'].astype(str).tolist()
     # text_list = text_list[0:19]
-    print("got to here")
+    print("got to here in trans_scores")
     # specific_model = sentiment_pipeline(
     # model="finiteautomata/bertweet-base-sentiment-analysis")
     y_trans_pred = sentiment_pipeline(text_list)
     # print(y_trans_pred)
     t_file = pd.DataFrame(y_trans_pred, columns=['label', 'score'])
     return t_file
+
+
+def trans_scorez(filington, colington):
+    sentiment_pipeline = pipeline(
+        'sentiment-analysis', model="finiteautomata/bertweet-base-sentiment-analysis")
+    filington.columns = colington
+    filington = clean_the_text_col(filington)
+
+    # Define a function that applies the sentiment analysis pipeline to a single row
+    print("got here in trans_scorez")
+
+    def apply_pipeline(row):
+        text = row['text']
+        y_trans_pred = sentiment_pipeline(text)
+        return y_trans_pred
+
+    # Use the apply method to apply the sentiment analysis pipeline to each row
+    y_trans_pred_2 = filington.apply(apply_pipeline, axis=1)
+    t_file1 = pd.DataFrame(y_trans_pred_2, columns=['label', 'score'])
+    return t_file1
 
 
 amzn_file = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_df_json.csv'
@@ -122,10 +149,10 @@ print(amzn_df2_nn.head())
 print()
 
 strt = datetime.datetime.now()
-amzn_df_tn = trans_scores(amzn_df, am_columns)
+amzn_df_tn = trans_scorez(amzn_df, am_columns)
 end = datetime.datetime.now()
 print("the  time for the first amzn_df_tn is: ", end - strt)
-##amzn_df_tn = pd.DataFrame.from_dict(amzn_json_tn, orient='columns')
+amzn_df_tn = pd.DataFrame.from_dict(amzn_json_tn, orient='columns')
 amzn_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv', header=True)
 print()
@@ -139,20 +166,28 @@ insp_file = '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_df_json.cs
 insp_file2 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_df_api2.csv'
 
 insp_columns = ['numbers', 'created_at', 'text', 'retweet_count', 'user_id',
-                'user.favourites_count', 'user.followers_count', 'INSP', 'Inspire', 'dupe']
+                'user.favourites_count', 'user.followers_count' 'INSP', 'Inspire', 'dupe', 'dupe']
 
-insp_df = pd.read_csv(insp_file, header=0, index_col=0, parse_dates=True)
-insp_df2 = pd.read_csv(insp_file2, header=0, index_col=0, parse_dates=True)
 
-insp_df.columns = insp_columns
-insp_df2.columns = common_cols
+insp_df = pd.read_csv(insp_file, header='infer')
+print("The shape of the inspire df is: ", insp_df.shape)
+insp_df2 = pd.read_csv(insp_file2, header='infer')
+print("The shape of the inspire df2 is: ", insp_df2.shape)
 
+
+insp_df.columns = ['numbers', 'created_at', 'text', 'retweet_count', 'user_id',
+                   'user.favourites_count', 'user.followers_count' 'INSP', 'Inspire', 'dupe', 'dupe']
+insp_df2.columns = ['index', 'created_at', 'user_id', 'text',
+                    'source', 'lang', 'likes', 'retweets', 'tweet_id']
+
+print("Doing the inspire df now, with nn.")
 insp_df_nn = assign_scores(insp_df, insp_columns)
 
 insp_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_nn_scored.csv', header=True)
 
-insp_df2_nn = assign_scores(insp_df2, common_cols)
+insp_df2_nn = assign_scores(insp_df2, ['index', 'created_at', 'user_id', 'text',
+                                       'source', 'lang', 'likes', 'retweets', 'tweet_id'])
 
 insp_df2_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_nn2_scored.csv', header=True)
@@ -169,15 +204,16 @@ print(insp_df2_nn.head())
 print()
 
 ####
+print("doing the inspire df now, with tn.")
 strt = datetime.datetime.now()
-# insp_df_tn = trans_scores(insp_df, insp_columns)
+insp_df_tn = trans_scores(insp_df, insp_columns)
 end = datetime.datetime.now()
-# print("the  time for the first insp_df_tn is: ", end - strt)
-# insp_df_tn.to_csv(
-# '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_tn_scored.csv', header = True)
+print("the  time for the first insp_df_tn is: ", end - strt)
+insp_df_tn.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_tn_scored.csv', header=True)
 print()
 print("now the transformers version of INSP and it took ", end - strt, "to run")
-# print(insp_df_tn.head())
+print(insp_df_tn.head())
 print()
 
 
@@ -204,29 +240,29 @@ print()
 ####
 
 strt = datetime.datetime.now()
-# aten_df_tn = trans_scores(aten_df, common_cols)
+aten_df_tn = trans_scores(aten_df, common_cols)
 end = datetime.datetime.now()
 
-# print("the  transformers version of aten is ", aten_df_tn.head())
-# aten_df_tn.to_csv(
-# '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_scored.csv', header=True)
+print("the  transformers version of aten is ", aten_df_tn.head())
+aten_df_tn.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_scored.csv', header=True)
 print()
-# print("now the transformers version and it took ", end - strt, "to run")
+print("now the transformers version and it took ", end - strt, "to run")
 
 
 ###
 
 KMI_file = '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_df_api2.csv'
 
-KMI_columns = ['created_at', 'text', 'retweet_count', 'user_id',
-               'user.favourites_count', 'user.followers_count', 'KMI', 'Kinder', 'dupe']
+KMI_columns = ['created_at', 'user_id', 'text', 'tweet_id',
+               'lang', 'likes', 'retweet_count']
 
 KMI_df = pd.read_csv(KMI_file, header=0, index_col=0, parse_dates=True)
 
 KMI_df.columns = KMI_columns
 
 strt = datetime.datetime.now()
-KMI_df_nn = assign_scores(KMI_df, common_cols)
+KMI_df_nn = assign_scores(KMI_df, KMI_columns)
 end = datetime.datetime.now()
 
 print("the time for the first KMI_df_nn is: ", end - strt)
@@ -241,16 +277,13 @@ print()
 ####
 
 strt = datetime.datetime.now()
-##KMI_df_tn = trans_scores(KMI_df, common_cols)
+KMI_df_tn = trans_scores(KMI_df, KMI_columns)
 end = datetime.datetime.now()
 
-print("the  transformers version", KMI_df_tn.head())
+print("the  transformers version for KMI is done\n", KMI_df_tn.head())
 
-# KMI_df_tn.to_csv(
-# '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored.csv', header=True)
 
-print()
-print("now the transformers version and it took ", end - strt, "to run")
+print("now the transformers version of KMI and it took ", end - strt, "to run")
 
 
 ###
@@ -287,3 +320,10 @@ Exxon_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Exxon_tn_scored.csv', header=True)
 print()
 print("now the transformers version and it took ", end - strt, "to run")
+
+
+KMI_df_tn.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored.csv', header=True)
+
+print()
+print("Finally got the KMI.")
