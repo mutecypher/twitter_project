@@ -149,7 +149,7 @@ print(amzn_df2_nn.head())
 print()
 
 strt = datetime.datetime.now()
-amzn_df_tn = trans_scorez(amzn_df, am_columns)
+amzn_df_tn = trans_scores(amzn_df, am_columns)
 end = datetime.datetime.now()
 print("the  time for the first amzn_df_tn is: ", end - strt)
 amzn_df_tn = pd.DataFrame.from_dict(amzn_json_tn, orient='columns')
