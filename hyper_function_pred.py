@@ -13,7 +13,7 @@ import tensorflow as tf
 import re
 import random
 from transformers import pipeline
-
+import emoji
 
 max_tokens = 30
 
@@ -149,10 +149,10 @@ print(amzn_df2_nn.head())
 print()
 
 strt = datetime.datetime.now()
-amzn_df_tn = trans_scores(amzn_df, am_columns)
+amzn_df_tn = trans_scores(amzn_df2, common_cols)
 end = datetime.datetime.now()
 print("the  time for the first amzn_df_tn is: ", end - strt)
-amzn_df_tn = pd.DataFrame.from_dict(amzn_json_tn, orient='columns')
+
 amzn_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv', header=True)
 print()
