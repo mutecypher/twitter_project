@@ -172,21 +172,21 @@ common_colz = ['index', 'TWID',
                'text',  'verdict_dict', 'Tforms']
 print("starting the chatGPT optimized scores \n", learning_df.head())
 strt = datetime.datetime.now()
-##learn_df_tn = trans_scorez(learning_df, common_colz)
+learn_df_tn = trans_scorez(learning_df, common_colz)
 end = datetime.datetime.now()
 
 print()
 print("Time to run transformers in chatGPT form: ", end - strt)
 print()
 
-# learn_df_tn.to_csv(
-# '/Volumes/Elements/GitHub/twitter-project/Data_Files/learn_df_tf.csv', index=False)
-##learn_df_tn.columns = ['labelz', 'scorez']
-##learning_df['Tformz'] = learn_df_tn['labelz']
-# learning_df['Tscore'] = learn_df_tn['score']
-# learning_df.to_csv(
-# '/Volumes/Elements/GitHub/twitter-project/Data_Files/learning_tf.csv', index=False)
-# print(learning_df.head())
+learn_df_tn.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/learn_df_tf.csv', index=False)
+learn_df_tn.columns = ['labelz', 'scorez']
+learning_df['Tformz'] = learn_df_tn['labelz']
+learning_df['Tscore'] = learn_df_tn['score']
+learning_df.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/learning_tf.csv', index=False)
+print(learning_df.head())
 
 
 conditions = [[learning_df['verdict_dict'] == learning_df['Tforms']],
