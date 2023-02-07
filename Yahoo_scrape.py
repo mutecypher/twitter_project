@@ -4,16 +4,14 @@ from yahoofinancials import YahooFinancials
 import datetime
 import statistics as st
 import numpy as np
-##import json
+
 whats_today = datetime.datetime.now().date()
 
-# add a day for every day past October 31, 2021 - was 586
 
-# for November 2022 plus day of month
-minus_fifteen_years = whats_today - datetime.timedelta(days=981 + 23)
+# February 2023 1043
+minus_fifteen_years = whats_today - datetime.timedelta(days=1043 + 4)
 
-##whats_today = whats_today.date()
-##minus_three = minus_three.date
+
 whats_today = whats_today.strftime('%Y-%m-%d')
 minus_fifteen_years = minus_fifteen_years.strftime('%Y-%m-%d')
 print(whats_today)
@@ -21,7 +19,6 @@ print(minus_fifteen_years)
 
 print("earliest date should be 3-24-2020")
 
-# %%
 marketz = ['DJIA', 'NDAQ', '^GSPC']
 namez = ['djia_df', 'nasdaq_df', 'spy_df']
 
@@ -185,58 +182,9 @@ print("the head of sp500_df is \n", sp500_df.head())
 ndaq_df.to_csv("ndaq_df.csv", header=True)
 djia_df.to_csv("djia__df.csv", header=True)
 
-# %% [markdown]
-# ## Amazon
 
-# %% [markdown]
-# ## This is for Tesla
-
-# %% [markdown]
-# ## This is for Apple
-
-# %% [markdown]
-# ## Everbridge
-
-# %% [markdown]
-# ## Kinder Morgan
-
-# %% [markdown]
-# ## Shopify
-
-# %% [markdown]
-# ## GMED
-
-# %% [markdown]
-# ## Sanofy
-
-# %% [markdown]
-# ## McKormick
-
-# %% [markdown]
-# ## Energy Transfer
-
-# %% [markdown]
-# ## Crude Oil
-
-# %% [markdown]
-# ## Inspire - as INSP
-
-# %% [markdown]
-# ## Crowdstrike Holding
-
-# %%
-
-
-# %% [markdown]
-# ## Nothing to see here, just some old debugging for finding the file with the fewest rows.
-
-# %%
-
-
-# %%
 marketz = ['DJIA', 'NDAQ', '^GSPC']
 
-# %%
 stawkz = ['AMZN',
           'TSLA', 'AAPL', 'EVBG', 'KMI', 'SHOP', 'GMED', 'SNY', 'MCK',
           'ET', 'INSP', 'CRWD', 'CL=F', 'UVXY', 'GLD', 'GBTC']
@@ -257,13 +205,6 @@ for stawk in stawkz:
 
     namez[i] = pd.DataFrame(data[stawk]['prices'])
     namez[i] = namez[i].drop('date', axis=1)
-
-##    print("the shape of sp500_df is \n", sp500_df.shape)
-##    print("i is ", i, "and namez[i] is \n", namez[i].head())
-
-    ##sp500_df.reset_index(drop = True)
-    ##djia_df.reset_index(drop = True)
-    ##ndaq_df.reset_index(drop = True)
 
 ##    print("the head of sp500 is \n", sp500_df.head())
 
@@ -572,21 +513,6 @@ time_now = datetime.datetime.now()
 
 print("the date and time is ", time_now)
 
-# %% [markdown]
-# ## alpha is actual rate of return minus expected rate of return
-#
-# Find T-bill data, find S&P 500 return over time , so risk premium is S&P500 - T-bill rate of retun
-# the use beta
-# expected rate is risk free rate (T-Bill) + beta *(market return - risk free rate)
-#
-# Then find the actual rate of return
-#
-# Then alpha is actual return minus expected rate
-#
-#
-
-# %%
-
 yahoo_financials = YahooFinancials('TB4WK')
 
 data = yahoo_financials.get_historical_price_data(start_date=minus_fifteen_years,
@@ -598,20 +524,7 @@ week_13_t_bill = pd.DataFrame(data['TB4WK'])
 print("/n The shape is ", week_13_t_bill.shape)
 
 
-##    print("the shape of sp500_df is \n", sp500_df.shape)
-##    print("i is ", i, "and namez[i] is \n", namez[i].head())
-
-##sp500_df.reset_index(drop = True)
-##djia_df.reset_index(drop = True)
-##ndaq_df.reset_index(drop = True)
-
-##    print("the head of sp500 is \n", sp500_df.head())
-
-
-# %%
 week_13_t_bill = pd.DataFrame(data['TB4WK'])
 ##week_13_t_bill = week_13_t_bill.drop('date', axis=1)
 
 print("/n The head is ", week_13_t_bill.shape)
-
-# %%

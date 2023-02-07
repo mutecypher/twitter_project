@@ -38,11 +38,12 @@ import sklearn.model_selection as sk
 from sklearn.metrics import confusion_matrix, auc, roc_curve
 import itertools
 import matplotlib.pyplot as plt
+import datetime
 
-print("version of tensorflow is ",tf.__version__)
+print("version of tensorflow is ", tf.__version__)
 
 # %%
-print("version of Keras is ",tf.keras.__version__)
+print("version of Keras is ", tf.keras.__version__)
 
 file = '/Volumes/Elements/GitHub/twitter-project/Data_Files/twitter_sentiment_learn.csv'
 
@@ -54,18 +55,23 @@ x = learning_df['text'].to_list()
 
 
 learning_df[["bad", "meh", "good"]] = 0
-for i in range(learning_df.shape[0]):
-    if (learning_df.loc[i, "NEG"] >= learning_df.loc[i, "NEU"]) and (learning_df.loc[i, "NEG"] >= learning_df.loc[i, "POS"]):
-        learning_df.loc[i, "bad"] = 1
-    elif (learning_df.loc[i, "NEU"] >= learning_df.loc[i, "NEG"]) and (learning_df.loc[i, "NEU"] >= learning_df.loc[i, "POS"]):
-        learning_df.loc[i, "meh"] = 1
-    else:
-        learning_df.loc[i, "good"] = 1
+strt = datetime.datetime.now()
+learning_df["bad"] = np.where((learning_df["NEG"] >= learning_df["NEU"]) & (
+    learning_df["NEG"] >= learning_df["POS"]), 1, 0)
+learning_df["meh"] = np.where((learning_df["NEU"] >= learning_df["NEG"]) & (
+    learning_df["NEU"] >= learning_df["POS"]), 1, 0)
+learning_df["good"] = np.where((learning_df["POS"] >= learning_df["NEG"]) & (
+    learning_df["POS"] >= learning_df["NEU"]), 1, 0)
+endy = datetime.datetime.now()
 
-y = learning_df[["bad", "meh", "good"]]
+print("time to convert to categorical via np.where is ", endy - strt)
 
 
 ##y = tarmac
+y = learning_df[["bad", "meh", "good"]]
+
+learning_df.to_csv(
+    "/Volumes/Elements/GitHub/twitter-project/Data_Files/twitter_cat_sentiment.csv", index=False)
 
 x_train, x_test, y_train, y_test = sk.train_test_split(
     x, y, test_size=0.20, random_state=42)
@@ -84,7 +90,6 @@ data_text = x_train + x_test
 data_text = x_train + x_test
 # %%
 y_train[1]
-
 
 
 num_words = 30000
@@ -147,6 +152,7 @@ x_train_pad[1]
 
 idx = tokenizer.word_index
 inverse_map = dict(zip(idx.values(), idx.keys()))
+
 
 def tokens_to_string(tokens):
     # Map from tokens back to words.
@@ -279,12 +285,12 @@ callbackx = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy',
 
 class myCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if(logs.get('val_accuracy') > 0.95):
+        if (logs.get('val_accuracy') > 0.95):
             print(
                 "\nReached 95% val_accuracy, so slowing the learning rate and keeping Nadam optimizer.")
             optimizer = Nadam(learning_rate=0.4*learning_rat)
             self.model.stop_training = False
-        if(logs.get('val_accuracy') > 0.970):
+        if (logs.get('val_accuracy') > 0.970):
             print(
                 "\nReached 987 val_accuracy, so slowing the learning rate and keeping Nadam optimizer.")
             optimizer = Nadam(learning_rate=0.1*learning_rat)

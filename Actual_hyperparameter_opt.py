@@ -45,6 +45,20 @@ aug_df = pd.read_csv(file2)
 
 x = learning_df['text'].to_list()
 
+
+learning_df[["bad", "meh", "good"]] = 0
+strt = datetime.datetime.now()
+learning_df["bad"] = np.where((learning_df["NEG"] >= learning_df["NEU"]) & (
+    learning_df["NEG"] >= learning_df["POS"]), 1, 0)
+learning_df["meh"] = np.where((learning_df["NEU"] >= learning_df["NEG"]) & (
+    learning_df["NEU"] >= learning_df["POS"]), 1, 0)
+learning_df["good"] = np.where((learning_df["POS"] >= learning_df["NEG"]) & (
+    learning_df["POS"] >= learning_df["NEU"]), 1, 0)
+endy = datetime.datetime.now()
+
+print("time to convert to categorical via np.where is ", endy - strt)
+
+
 print("The initial text length is ", len(x))
 print("and triple is ", 3*len(x))
 aug_aug20 = aug_df['twenty_per_syn'].to_list()
@@ -52,10 +66,11 @@ print("aug 20 length is ", len(aug_aug20))
 aug_aug30 = aug_df['thirty_per_syn'].to_list()
 print("aug 30 length is ", len(aug_aug30))
 
-for i in range(len(aug_aug20)):
-    x.append(str(aug_aug20[i]))
-for j in range(len(aug_aug30)):
-    x.append(str(aug_aug30[j]))
+##
+# for i in range(len(aug_aug20)):
+# x.append(str(aug_aug20[i]))
+# for j in range(len(aug_aug30)):
+# x.append(str(aug_aug30[j]))
 
 print("The length of x is ", len(x))
 y_neg = learning_df['NEG'].to_list()
@@ -92,11 +107,20 @@ for i in range(d):
     y_pos.append(y_pos[i])
 print("The length of y_pos is ", len(y_pos))
 
-y = pd.DataFrame({'NEG': y_neg, 'NEU': y_neu, 'POS': y_pos})
-x_train, x_test, y_train, y_test = sk.train_test_split(
-    x, y, test_size=0.25
-    # ,random_state=42
-)
+# Used this without the categorical conversion
+
+## y = pd.DataFrame({'NEG': y_neg, 'NEU': y_neu, 'POS': y_pos})
+
+# Using the categorical conversion
+
+y = pd.DataFrame(
+    {'NEG': learning_df['bad'], 'NEU': learning_df['meh'], 'POS': learning_df['good']})
+
+print("The length of x is ", len(x))
+print("The length of y is ", y.shape)
+x_train, x_test, y_train, y_test = sk.train_test_split(x, y, test_size=0.25
+                                                       # ,random_state=42
+                                                       )
 
 y_train = np.array(y_train)
 y_test = np.array(y_test)
@@ -151,36 +175,13 @@ def tokens_to_string(tokens):
     return text
 
 
-model = Sequential()
+##model = Sequential()
 figure_of_merit = 2 * max_tokens  # was 100
 first_layer = math.floor(max_tokens/2) + 2
 second_layer = math.floor(max_tokens/2) + 1
 third_layer = math.floor(max_tokens/3) + 3
 fourth_layer = math.floor(max_tokens/2)
 embedding_size = figure_of_merit
-model.add(Embedding(input_dim=num_words,  # was num_words
-                    output_dim=embedding_size,
-                    input_length=max_tokens,
-                    name='layer_embedding'))
-model.add(GRU(units=first_layer,
-              activation='relu',  # was tanh
-              recurrent_activation='sigmoid',
-              return_sequences=True))
-model.add(GRU(units=second_layer, activation='tanh',  # was tanh
-              recurrent_activation='softmax',
-              return_sequences=True))
-model.add(GRU(units=third_layer, activation='tanh',  # was tanh
-              recurrent_activation='softmax',
-              return_sequences=True))
-model.add(GRU(units=fourth_layer, activation='tanh',  # was tanh
-              recurrent_activation='sigmoid', return_sequences=False))
-model.add(Dense(3, activation='softmax'))  # was 3
-learning_rat = 3e-3
-optimizer = Nadam(learning_rate=learning_rat)
-
-model.compile(loss='binary_crossentropy',
-              optimizer=optimizer,
-              metrics=['accuracy'])
 
 
 # set up the hyperparameters
@@ -377,7 +378,7 @@ def fitness(learning_rate,
 
     history = model.fit(x=x_train_pad,
                         y=y_train,
-                        epochs=20,
+                        epochs=10,
                         batch_size=batchez_yo,
                         validation_split=0.25,
                         callbacks=[callback_log, callbackx])
@@ -422,20 +423,14 @@ def fitness(learning_rate,
     # Delete the Keras model with these hyper-parameters from memory.
     del model
 
-    # Clear the Keras session, otherwise it will keep adding new
-    # models to the same TensorFlow graph each time we create
-    # a model with a different set of hyper-parameters.
     K.clear_session()
 
-    # NOTE: Scikit-optimize does minimization so it tries to
-    # find a set of hyper-parameters with the LOWEST fitness-value.
-    # Because we are interested in the HIGHEST classification
-    # accuracy, we need to negate this number so it can be minimized.
 
+# accuracy, we need to negate this number so it can be minimized.
     return -accuracy
 
 
-n_cally = 125
+n_cally = 50
 n = 0
 
 begy = datetime.datetime.now()
