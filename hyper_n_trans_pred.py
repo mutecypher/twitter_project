@@ -1,4 +1,3 @@
-
 from nltk.corpus import stopwords
 import datetime
 import pandas as pd
@@ -91,6 +90,38 @@ def trans_scores(filington, colington):
     return t_file
 
 
+def normy(file):
+    file[['summy', 'neg1', 'neu1', 'pos1']] = 0
+    file['neg1'] = file['neg']/(file['neg'] + file['neu'] + file['pos'])
+    file['neu1'] = file['neu']/(file['neg'] + file['neu'] + file['pos'])
+    file['pos1'] = file['pos']/(file['neg'] + file['neu'] + file['pos'])
+    file['summy'] = file['neg1'] + file['neu1'] + file['pos1']
+    file['neg'] = file['neg1']
+    file['neu'] = file['neu1']
+    file['pos'] = file['pos1']
+    file = file.drop(columns=['neg1', 'neu1', 'pos1'])
+    return file
+
+
+def relabel(file):
+    neg_mask = file['label'] == 'NEG'
+    neu_mask = file['label'] == 'NEU'
+    pos_mask = file['label'] == 'POS'
+    score = file['score']
+
+    file['neg'] = np.where(neg_mask, score, (1 - score)/2)
+    file['neu'] = np.where(neu_mask, score, (1 - score)/2)
+    file['pos'] = np.where(pos_mask, score, (1 - score)/2)
+
+    file['neg'] = np.where(neu_mask, (1 - score)/2, file['neg'])
+    file['neu'] = np.where(neg_mask, (1 - score)/2, file['neu'])
+    file['pos'] = np.where(neg_mask, (1 - score)/2, file['pos'])
+    file['neg'] = np.where(pos_mask, (1 - score)/2, file['neg'])
+    file['neu'] = np.where(pos_mask, (1 - score)/2, file['neu'])
+
+    return file
+
+
 amzn_file = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_df_json.csv'
 
 amzn_file2 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_df_api2.csv'
@@ -106,36 +137,50 @@ am_columns = ['numbers', 'created_at', 'text', 'retweet_count', 'user_id',
 
 amzn_df.columns = am_columns
 print()
+amzn_df = amzn_df.drop_duplicates()
 print("got the first amzn_df done")
 print("the shape of the first amzn_df2 is: ", amzn_df2.shape)
 print("the shape of the common_cols is: ", len(common_cols))
 print()
 amzn_df2 = amzn_df2[amzn_df2.columns.intersection(common_cols)]
 amzn_df2.columns = common_cols
+amzn_df2 = amzn_df2.drop_duplicates()
 
 amzn_df_nn = assign_scores(amzn_df, am_columns)
+print("Assigning scores to amzn_df_nn")
+amzn_df_nn = normy(amzn_df_nn)
 amzn_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_nn_scored.csv', header=True)
 
 print()
 print(amzn_df_nn.head())
 print()
-
+print("Assigning scores to amzn_df2_nn")
 amzn_df2_nn = assign_scores(amzn_df2, common_cols)
+print("the head of amzn_df2_nn is \n", amzn_df2_nn.head())
+amzn_df2_nn = normy(amzn_df2_nn)
+
 
 amzn_df2_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_2_nn_scored.csv', header=True)
 
 
 print()
-print(amzn_df2_nn.head())
+print("amzn_df2_nn, the head is \n",
+      amzn_df2_nn[['pos', 'neu', 'neg', 'summy']].head())
 print()
 
 strt = datetime.datetime.now()
 amzn_df_tn = trans_scores(amzn_df2, common_cols)
 end = datetime.datetime.now()
 print("the  time for the first amzn_df_tn is: ", end - strt)
+print("About to relabel amzn_df_tn \n", amzn_df_tn.head())
+amzn_df_tn.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv', header=True)
 
+amzn_df_tn = relabel(amzn_df_tn)
+
+print("Have normalize amzn_df_tn \n", amzn_df_tn.head())
 amzn_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv', header=True)
 print()
@@ -178,13 +223,15 @@ insp_columns = ['created_at', 'text', 'retweet_count', 'user_id',
 insp_df = pd.read_csv(insp_file, header=0, index_col=0, parse_dates=True)
 
 
-## insp_df.columns = insp_columns
+# insp_df.columns = insp_columns
 print()
 print("The shape of the inspire df is: ", insp_df.shape)
 insp_df2 = pd.read_csv(insp_file2, header=0,    index_col=0, parse_dates=True)
 
 insp_df2 = insp_df2[insp_df2.columns.intersection(common_cols)]
 
+insp_df2 = insp_df2.drop_duplicates()
+inspf_df = insp_df.drop_duplicates()
 insp_df2.columns = common_cols
 print("The shape of the inspire df2 is: ", insp_df2.shape)
 print()
@@ -192,11 +239,13 @@ print()
 print("Doing the inspire df now, with nn.")
 insp_df_nn = assign_scores(insp_df, insp_columns)
 
+insp_df_nn = normy(insp_df_nn)
 insp_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_nn_scored.csv', header=True)
 
 insp_df2_nn = assign_scores(insp_df2, common_cols)
 
+insp_df2_nn = normy(insp_df2_nn)
 insp_df2_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_nn2_scored.csv', header=True)
 
@@ -217,6 +266,8 @@ strt = datetime.datetime.now()
 insp_df_tn = trans_scores(insp_df, insp_columns)
 end = datetime.datetime.now()
 print("the  time for the first insp_df_tn is: ", end - strt)
+
+insp_df_tn = relabel(insp_df_tn)
 insp_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_tn_scored.csv', header=True)
 print()
@@ -239,9 +290,11 @@ aten_df.columns = common_cols
 
 aten_df_nn = assign_scores(aten_df, common_cols)
 
+aten_df_nn = normy(aten_df_nn)
 aten_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_nn_scored.csv', header=True)
 
+aten_df = aten_df.drop_duplicates()
 print()
 print("aten shape is ", aten_df.shape)
 print()
@@ -252,6 +305,7 @@ strt = datetime.datetime.now()
 aten_df_tn = trans_scores(aten_df, common_cols)
 end = datetime.datetime.now()
 
+aten_df_tn = relabel(aten_df_tn)
 print("the  transformers version of aten is ", aten_df_tn.head())
 aten_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_scored.csv', header=True)
@@ -271,10 +325,12 @@ KMI_df = pd.read_csv(KMI_file, header=0, index_col=0, parse_dates=True)
 KMI_df = KMI_df[KMI_df.columns.intersection(common_cols)]
 KMI_df.columns = KMI_columns
 
+KMI_df = KMI_df.drop_duplicates()
 strt = datetime.datetime.now()
 KMI_df_nn = assign_scores(KMI_df, common_cols)
 end = datetime.datetime.now()
 
+KMI_df_nn = normy(KMI_df_nn)
 print("the time for the first KMI_df_nn is: ", end - strt)
 KMI_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_nn_scored.csv', header=True)
@@ -290,6 +346,7 @@ strt = datetime.datetime.now()
 KMI_df_tn = trans_scores(KMI_df, common_cols)
 end = datetime.datetime.now()
 
+KMI_df_tn = relabel(KMI_df_tn)
 print("the  transformers version for KMI is done\n", KMI_df_tn.head())
 
 
@@ -310,10 +367,13 @@ Exxon_df = Exxon_df[Exxon_df.columns.intersection(common_cols)]
 
 Exxon_df.columns = common_cols
 
+Exxon_df = Exxon_df.drop_duplicates()
+
 strt = datetime.datetime.now()
 Exxon_df_nn = assign_scores(Exxon_df, common_cols)
 end = datetime.datetime.now()
 
+Exxon_df_nn = normy(Exxon_df_nn)
 print("the time for the first Exxon_df_nn is: ", end - strt)
 Exxon_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Exxon_nn_scored.csv', header=True)
@@ -328,6 +388,7 @@ strt = datetime.datetime.now()
 Exxon_df_tn = trans_scores(Exxon_df, common_cols)
 end = datetime.datetime.now()
 
+Exxon_df_tn = relabel(Exxon_df_tn)
 print("the  transformers version", Exxon_df_tn.head())
 Exxon_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Exxon_tn_scored.csv', header=True)
@@ -335,6 +396,7 @@ print()
 print("now the transformers version and it took ", end - strt, "to run")
 
 
+KMI_df_tn = relabel(KMI_df_tn)
 KMI_df_tn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored.csv', header=True)
 
