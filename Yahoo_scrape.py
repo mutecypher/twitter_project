@@ -9,7 +9,7 @@ whats_today = datetime.datetime.now().date()
 
 
 # February 2023 1043
-minus_fifteen_years = whats_today - datetime.timedelta(days=1043 + 21)
+minus_fifteen_years = whats_today - datetime.timedelta(days=1071 + 31)
 
 
 whats_today = whats_today.strftime('%Y-%m-%d')

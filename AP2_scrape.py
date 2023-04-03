@@ -15,11 +15,10 @@ API_key = '2BYhPkDzJcSNcfNTpCqxgqqtB'
 # API_key = 'qchdahMH5QJp0xd1dPQPTdxAJ'
 API_SECRET_KEY = 'w6gotTmFbLULViLejmsgacib7mhjKK6EARvlNC6ZoTwPV3X6Ot'
 
-how_many_tries = 24
-items_to_get = 100
+how_many_tries = 48
+items_to_get = 99
 whats_today = datetime.datetime.now()
 # whats_today = whats_today.strftime("%Y%m%d%H%M")
-
 
 minus_one = datetime.datetime.now() - datetime.timedelta(days=1)
 
@@ -94,7 +93,7 @@ def filing_it_away(get_the_file, d_frame, stock):
     print("the appended shape is ", ricky_bobby.shape)
 ##
     ricky_bobby = ricky_bobby[ricky_bobby['lang'] == 'en']
-    ricky_bobby = ricky_bobby.drop_duplicates()
+    ricky_bobby = ricky_bobby.drop_duplicates(subset=['text'], keep='last')
     ricky_bobby.reset_index(inplace=True, drop=True)
     print("the final shape is ", ricky_bobby.shape)
 
