@@ -31,9 +31,9 @@ df = df[['created_at', 'text', 'likes', 'retweets', 'neg', 'neu', 'pos']]
 
 grouped = df.groupby('created_at')
 
-# calculate weighted average for neg, neu, and pos
+# calculate weighted average for neg, neu, and pos, add one to each value to include the tweet itself in the calculation
 weighted_avg = grouped.apply(lambda x: (
-    (x['retweets']*x['neg']) + (x['likes']*x['neg'])) / (x['retweets'] + x['likes']))
+    ((x['retweets']+1)*x['neg']) + ((x['likes']+1)*x['neg'])) / (x['retweets'] + x['likes'] + 2))
 
 weighted_avg.columns = ['created_at', 'neg']
 print(weighted_avg.head())
