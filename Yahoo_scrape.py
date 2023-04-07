@@ -8,8 +8,8 @@ import numpy as np
 whats_today = datetime.datetime.now().date()
 
 
-# February 2023 1043
-minus_fifteen_years = whats_today - datetime.timedelta(days=1071 + 31)
+# April 2023 1102
+minus_fifteen_years = whats_today - datetime.timedelta(days=1102 + 2)
 
 
 whats_today = whats_today.strftime('%Y-%m-%d')
@@ -206,7 +206,7 @@ for stawk in stawkz:
     namez[i] = pd.DataFrame(data[stawk]['prices'])
     namez[i] = namez[i].drop('date', axis=1)
 
-##    print("the head of sp500 is \n", sp500_df.head())
+# print("the head of sp500 is \n", sp500_df.head())
 
     barky = namez[i]['adjclose']
     namez[i]['pct'] = barky.pct_change(1)
@@ -525,6 +525,6 @@ print("/n The shape is ", week_13_t_bill.shape)
 
 
 week_13_t_bill = pd.DataFrame(data['TB4WK'])
-##week_13_t_bill = week_13_t_bill.drop('date', axis=1)
+# week_13_t_bill = week_13_t_bill.drop('date', axis=1)
 
 print("/n The head is ", week_13_t_bill.shape)

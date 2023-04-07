@@ -32,7 +32,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import random
 
-max_tokens = 30
+max_tokens = 50
 
 pad = 'pre'
 
@@ -116,7 +116,7 @@ amzn_df_nn = amzn_df.join(predictions)
 amzn_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                       'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 amzn_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_nn_scored.csv', header=True)
@@ -162,7 +162,7 @@ KMI_df_nn = KMI_df.join(predictions)
 KMI_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                      'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 KMI_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_nn_scored.csv', header=True)
@@ -208,7 +208,7 @@ CRWD_df_nn = CRWD_df.join(predictions)
 CRWD_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                       'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 CRWD_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/CRWD_nn_scored.csv', header=True)
@@ -254,7 +254,7 @@ APPN_df_nn = APPN_df.join(predictions)
 APPN_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                       'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 APPN_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/APPN_nn_scored.csv', header=True)
@@ -302,7 +302,7 @@ INSP_df_nn = INSP_df.join(predictions)
 INSP_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                       'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 INSP_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_nn_scored.csv', header=True)
@@ -350,7 +350,7 @@ SNY_df_nn = SNY_df.join(predictions)
 SNY_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                      'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 SNY_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/SNY_nn_scored.csv', header=True)
@@ -398,7 +398,7 @@ EVBG_df_nn = EVBG_df.join(predictions)
 EVBG_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                       'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 EVBG_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_FilesEVBG_nn_scored.csv', header=True)
@@ -446,7 +446,7 @@ XOM_df_nn = XOM_df.join(predictions)
 XOM_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                      'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 XOM_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/XOM_nn_scored.csv', header=True)
@@ -495,7 +495,7 @@ GMED_df_nn = GMED_df.join(predictions)
 GMED_df_nn.columns = ['number', 'created_at', 'full_text', 'retweet_count', 'user_id',
                       'user.favourites_count', 'user.followers_count', 'Symbol', 'Name', 'dupe', 'neg', 'neu', 'pos']
 
-##    print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
+# print("\nThe head of the ", i, " dataframe is \n", Krusty[i].head())
 
 GMED_df_nn.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/GMED_nn_scored.csv', header=True)
