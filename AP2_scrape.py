@@ -18,7 +18,7 @@ API_SECRET_KEY = 'w6gotTmFbLULViLejmsgacib7mhjKK6EARvlNC6ZoTwPV3X6Ot'
 how_many_tries = 24
 items_to_get = 99
 whats_today = datetime.datetime.now()
-# whats_today = whats_today.strftime("%Y%m%d%H%M")
+whats_today = whats_today.strftime("%Y%m%d%H%M")
 
 minus_one = datetime.datetime.now() - datetime.timedelta(days=1)
 
@@ -40,8 +40,10 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
     for i in range(num_hrs):
         time.sleep(0.5)
         strt_date = datetime.datetime.now() - datetime.timedelta(hours=i)
+        # strt_date = strt_date - datetime.timedelta(days=)
+        # print("the start date is ", strt_date)
         stp_date = datetime.datetime.now() - datetime.timedelta(hours=i+1)
-
+        # stp_date = stp_date - datetime.timedelta(days=0)
         client = tweepy.Client(bearer_token=my_bearer_token)
         search_words = src_wd_1
 
@@ -58,10 +60,10 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
                 'created_at': tweet.created_at,
                 'user_id': tweet.author_id,
                 'text': tweet.text,
-                'tweet_id': tweet.id,
                 'lang': tweet.lang,
                 'likes': tweet.public_metrics['like_count'],
-                'retweets': tweet.public_metrics['retweet_count']
+                'retweets': tweet.public_metrics['retweet_count'],
+                'tweet_id': tweet.id
             }
             tweetz.append(tweet_info)
 
@@ -87,10 +89,10 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
 
 def filing_it_away(get_the_file, d_frame, stock):
     file_name = '/Volumes/Elements/GitHub/twitter-project/Data_Files/' + get_the_file
-    ricky_bobby = pd.read_table(file_name, sep=',', header='infer')
+    ricky_bobby = pd.read_csv(file_name, sep=',', header='infer')
     print("the initial shape is ", ricky_bobby.shape)
-    ricky_bobby.append(d_frame)
-    print("the appended shape is ", ricky_bobby.shape)
+    ricky_bobby = ricky_bobby.append(d_frame)
+    print("the shape to be added is ", d_frame.shape)
 ##
     ricky_bobby = ricky_bobby[ricky_bobby['lang'] == 'en']
     ricky_bobby = ricky_bobby.drop_duplicates(subset=['text'], keep='last')
@@ -103,8 +105,17 @@ def filing_it_away(get_the_file, d_frame, stock):
 
 
 tweets_AMZN = get_them_tweets('AMZN', 'Amazon', how_many_tries, items_to_get)
-
+sprat = list(range(0, len(tweets_AMZN)))
+# print(sprat)
 Amazon_df = pd.DataFrame(tweets_AMZN)
+# Amazon_df['index'] = sprat
+# Amazon_df.set_index('index', inplace=True)
+# Amazon_df.to_csv('Amazon_df_interim.csv')
+# Amazon_df = pd.read_csv('Amazon_df_interim.csv', sep=',', header='infer')
+print()
+print("the shape of the Amazon_df is ", Amazon_df.shape)
+print()
+print("the tail of the Amazon_df is\n ", Amazon_df.tail())
 
 filing_it_away('Amazon_df_api2.csv', Amazon_df, "Amazon")
 

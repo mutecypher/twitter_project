@@ -16,11 +16,11 @@ def comb_and_agg(df):
 
 # Remove rows with null values
     df = df[pd.notnull(df['created_at'])]
-    df['created_at'] = pd.to_datetime(df['created_at']).dt.strftime('%m/%d/%Y')
 
     # Note that the code assumes that your data file has columns named tweets, likes, neg, neu, and pos containing the corresponding values for each tweet. If your data file has different column names, you will need to modify the code accordingly.
     df = df[['created_at', 'text', 'likes', 'retweets', 'neg', 'neu', 'pos']]
-    df = df.sort_values(by='created_at')
+    df['created_at'] = pd.to_datetime(df['created_at']).dt.strftime('%m/%d/%Y')
+    df = df.sort_values(by='created_at', ascending=False)
 
     df['likes'] = df['likes'].apply(lambda x: int(
         x) if str(x).isdigit() else None).dropna()
@@ -33,8 +33,9 @@ def comb_and_agg(df):
     # x).replace('.', '').isdigit() else None).dropna()
     # df['pos'] = df['pos'].apply(lambda x: float(x) if str(
     # x).replace('.', '').isdigit() else None).dropna()
-    df = df.reset_index(drop=True)
     df = df.dropna()
+    df = df.reset_index(drop=True)
+
     print()
     print("the dataframe head is ", df.head())
     print()
@@ -44,8 +45,6 @@ def comb_and_agg(df):
     print()
     # group the data by date and calculate the weighted average for each sentiment
 
-    df.to_csv(
-        '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_dummy.csv', index=False)
     a = 0
     created_dates = []
     agged_neg = []
@@ -74,7 +73,7 @@ def comb_and_agg(df):
             # print("the value of a is ", a)
             a += 1
 
-        created_dates.append(df.loc[a - 1, 'created_at'])
+        created_dates.append(df.loc[a, 'created_at'])
         if (temp_likes + temp_retweets) > 2:
             agged_neg.append(temp_neg / (temp_likes + temp_retweets))
             agged_neu.append(temp_neu / (temp_likes + temp_retweets))
@@ -115,6 +114,11 @@ print("the tail of the dataframe is ", try1.tail())
 file2 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_nn_scored.csv'
 
 df = pd.read_csv(file2, header='infer', index_col=0)
+print()
+print("the shape of the dataframe is ", df.shape)
+print()
+df['retweets'] = df['retweet_count']
+df['likes'] = df['user.favourites_count']
 # save the result to a CSV file
 try2 = comb_and_agg(df)
 try2.to_csv(
@@ -122,3 +126,20 @@ try2.to_csv(
 
 print("the shape of the dataframe is ", try2.shape)
 print("the tail of the dataframe is ", try2.tail())
+
+
+file3 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv'
+
+df = pd.read_csv(file3, header='infer', index_col=0)
+print()
+print("the shape of the dataframe is ", df.shape)
+print()
+# df['retweets'] = df['retweet_count']
+# df['likes'] = df['user.favourites_count']
+# save the result to a CSV file
+try3 = comb_and_agg(df)
+try3.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_3_agged_df.csv')
+
+print("the shape of the dataframe is ", try3.shape)
+print("the tail of the dataframe is ", try3.tail())

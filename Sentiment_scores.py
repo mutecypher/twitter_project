@@ -81,12 +81,16 @@ def trans_scores(filington, colington):
     filington = clean_the_text_col(filington)
     text_list = filington['text'].astype(str).tolist()
     # text_list = text_list[0:19]
-    print("got to here in trans_scores")
+    print("got to here in trans_scores\n")
+    print("And the head is \n", filington.head())
     # specific_model = sentiment_pipeline(
     # model="finiteautomata/bertweet-base-sentiment-analysis")
     y_trans_pred = sentiment_pipeline(text_list)
     # print(y_trans_pred)
-    t_file = pd.DataFrame(y_trans_pred, columns=['label', 'score'])
+    s_file = pd.DataFrame(y_trans_pred, columns=['label', 'score'])
+    t_file = pd.concat([filington.reset_index(drop=True),
+                       s_file.reset_index(drop=True)], axis=1)
+    print("the head of t_file is \n", t_file.head())
     return t_file
 
 
@@ -145,6 +149,8 @@ print()
 amzn_df2 = amzn_df2[amzn_df2.columns.intersection(common_cols)]
 amzn_df2.columns = common_cols
 amzn_df2 = amzn_df2.drop_duplicates()
+print()
+print("amzn_df2 is \n", amzn_df2.head())
 
 amzn_df_nn = assign_scores(amzn_df, am_columns)
 print("Assigning scores to amzn_df_nn")
@@ -166,8 +172,7 @@ amzn_df2_nn.to_csv(
 
 
 print()
-print("amzn_df2_nn, the head is \n",
-      amzn_df2_nn[['pos', 'neu', 'neg', 'summy']].head())
+print("amzn_df2_nn, the head is \n", amzn_df2_nn.head())
 print()
 
 strt = datetime.datetime.now()
