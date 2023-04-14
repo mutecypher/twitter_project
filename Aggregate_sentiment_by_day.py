@@ -37,11 +37,11 @@ def comb_and_agg(df):
     df = df.reset_index(drop=True)
 
     print()
-    print("the dataframe head is ", df.head())
+    # print("the dataframe head is ", df.head())
     print()
-    print("the dataframe shape is ", df.shape)
+    # print("the dataframe shape is ", df.shape)
     print()
-    print("the dataframe columns are ", df.columns)
+    # print("the dataframe columns are ", df.columns)
     print()
     # group the data by date and calculate the weighted average for each sentiment
 
@@ -96,31 +96,34 @@ def comb_and_agg(df):
 
     # print the result
     print()
-    print("The shape of the aggregated dataframe is \n", agged_df.shape)
+    # print("The shape of the aggregated dataframe is \n", agged_df.shape)
     print()
-    print("The aggregated head is \n", agged_df.head())
+    # print("The aggregated head is \n", agged_df.head())
     return agged_df
 
 
-df = pd.read_csv(file1, header='infer', index_col=0)
+df = pd.read_csv(file1, header='infer')
 # save the result to a CSV file
 try1 = comb_and_agg(df)
 try1.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_agged_df.csv')
 
-print("the shape of the dataframe is ", try1.shape)
-print("the tail of the dataframe is ", try1.tail())
+print("the shape of the Amazon_agged_df is ", try1.shape)
+print("the tail of the Amazon_agged_df is ", try1.tail())
 
 file2 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_nn_scored.csv'
 
-df = pd.read_csv(file2, header='infer', index_col=0)
+df = pd.read_csv(file2, header='infer')
 print()
-print("the shape of the dataframe is ", df.shape)
+print("the shape of the Amazon_nn_scored is ", df.shape)
 print()
 df['retweets'] = df['retweet_count']
 df['likes'] = df['user.favourites_count']
 # save the result to a CSV file
 try2 = comb_and_agg(df)
+print()
+print("the shape of the Amazon_2_agged_df is ", try2.shape)
+print()
 try2.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_2_agged_df.csv')
 
@@ -130,7 +133,7 @@ print("the tail of the dataframe is ", try2.tail())
 
 file3 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv'
 
-df = pd.read_csv(file3, header='infer', index_col=0)
+df = pd.read_csv(file3, header='infer')
 print()
 print("the shape of the dataframe is ", df.shape)
 print()
@@ -141,5 +144,5 @@ try3 = comb_and_agg(df)
 try3.to_csv(
     '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_3_agged_df.csv')
 
-print("the shape of the dataframe is ", try3.shape)
-print("the tail of the dataframe is ", try3.tail())
+print("the shape of the Amazon_3_agged_df is ", try3.shape)
+print("the tail of the Amazon_3_agged_df is ", try3.tail())
