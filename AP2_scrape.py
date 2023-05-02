@@ -18,7 +18,7 @@ API_SECRET_KEY = 'w6gotTmFbLULViLejmsgacib7mhjKK6EARvlNC6ZoTwPV3X6Ot'
 how_many_tries = 24
 items_to_get = 99
 whats_today = datetime.datetime.now()
-whats_today = whats_today.strftime("%Y%m%d%H%M")
+whats_today = whats_today.strftime("%Y%m%d")
 
 minus_one = datetime.datetime.now() - datetime.timedelta(days=1)
 
