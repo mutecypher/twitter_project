@@ -14,6 +14,17 @@ def comb_and_agg(df):
 
 # Remove rows with null values
     df = df[pd.notnull(df['created_at'])]
+    if 'likes' not in df.columns:
+        if 'user.favourites_count' in df.columns:
+            df = df.rename(columns={'user.favourites_count': 'likes'})
+        else:
+            raise ValueError(
+                'Could not user.favourites_count column in dataframe')
+    if 'retweets' not in df.columns:
+        if 'retweet_count' in df.columns:
+            df = df.rename(columns={'retweet_count': 'retweets'})
+        else:
+            raise ValueError('Could not retweet_count column in dataframe')
 
     # Note that the code assumes that your data file has columns named tweets, likes, neg, neu, and pos containing the corresponding values for each tweet. If your data file has different column names, you will need to modify the code accordingly.
     df = df[['created_at', 'text', 'likes', 'retweets', 'neg', 'neu', 'pos']]
@@ -35,12 +46,6 @@ def comb_and_agg(df):
     df = df.dropna()
     df = df.reset_index(drop=True)
 
-    print()
-    # print("the dataframe head is ", df.head())
-    print()
-    # print("the dataframe shape is ", df.shape)
-    print()
-    # print("the dataframe columns are ", df.columns)
     print()
     # group the data by date and calculate the weighted average for each sentiment
 
@@ -93,11 +98,6 @@ def comb_and_agg(df):
     }
     agged_df = pd.DataFrame(dict)
 
-    # print the result
-    print()
-    # print("The shape of the aggregated dataframe is \n", agged_df.shape)
-    print()
-    # print("The aggregated head is \n", agged_df.head())
     return agged_df
 
 
@@ -147,3 +147,111 @@ try3.to_csv(
 
 print("the shape of the Amazon_tn_norm redone is ", try3.shape)
 print("the tail of the Amazon_tn_norm redone is ", try3.tail())
+
+
+file4 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_norm.csv'
+file5 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_nn_scored.csv'
+file6 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_scored.csv'
+
+df4 = pd.read_csv(file4, header='infer')
+df5 = pd.read_csv(file5, header='infer')
+df6 = pd.read_csv(file6, header='infer')
+
+print()
+try4 = comb_and_agg(df4)
+try4.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_norm_agged.csv')
+print("the shape of the ATEN_tn_norm redone is ", try4.shape)
+
+print()
+try5 = comb_and_agg(df5)
+try5.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_nn_scored_agged.csv')
+print("the shape of the ATEN_nn_scored redone is ", try5.shape)
+
+print()
+try6 = comb_and_agg(df6)
+try6.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/ATEN_tn_scored_agged.csv')
+print("the shape of the ATEN_tn_scored redone is ", try6.shape)
+
+
+file7 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Exxon_tn_norm.csv'
+file8 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Exxon_nn_scored.csv'
+file9 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Exxon_tn_scored.csv'
+
+df7 = pd.read_csv(file7, header='infer')
+df8 = pd.read_csv(file8, header='infer')
+df9 = pd.read_csv(file9, header='infer')
+
+print()
+try7 = comb_and_agg(df7)
+try7.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//Exxon_tn_norm_agged.csv')
+print("the shape of the Exxon_tn_norm redone is ", try7.shape)
+
+print()
+try8 = comb_and_agg(df8)
+try8.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//Exxon_nn_scored_agged.csv')
+print("the shape of the Exxon_nn_scored redone is ", try8.shape)
+
+print()
+try9 = comb_and_agg(df9)
+try9.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//Exxon_tn_scored_agged.csv')
+print("the shape of the Exxon_tn_scored redone is ", try9.shape)
+
+
+file10 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_tn_norm.csv'
+file11 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_nn_scored.csv'
+file12 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/INSP_tn_scored.csv'
+
+df10 = pd.read_csv(file10, header='infer')
+df11 = pd.read_csv(file11, header='infer')
+df12 = pd.read_csv(file12, header='infer')
+
+print()
+try10 = comb_and_agg(df10)
+try10.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//INSP_tn_norm_agged.csv')
+print("the shape of the INSP_tn_norm redone is ", try10.shape)
+
+print()
+try11 = comb_and_agg(df11)
+try11.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//INSP_nn_scored_agged.csv')
+print("the shape of the INSP_nn_scored redone is ", try11.shape)
+
+print()
+try12 = comb_and_agg(df12)
+try12.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//INSP_tn_scored_agged.csv')
+print("the shape of the INSP_tn_scored redone is ", try12.shape)
+
+
+file13 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_norm.csv'
+file14 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_nn_scored.csv'
+file15 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored.csv'
+
+df13 = pd.read_csv(file13, header='infer')
+df14 = pd.read_csv(file14, header='infer')
+df15 = pd.read_csv(file15, header='infer')
+
+print()
+try13 = comb_and_agg(df13)
+try13.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//KMI_tn_norm_agged.csv')
+print("the shape of the KMI_tn_norm redone is ", try13.shape)
+
+print()
+try14 = comb_and_agg(df14)
+try14.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//KMI_nn_scored_agged.csv')
+print("the shape of the KMI_nn_scored redone is ", try14.shape)
+
+print()
+try15 = comb_and_agg(df15)
+try15.to_csv(
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files//KMI_tn_scored_agged.csv')
+print("the shape of the KMI_tn_scored redone is ", try15.shape)

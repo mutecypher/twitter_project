@@ -8,8 +8,8 @@ import numpy as np
 whats_today = datetime.datetime.now().date()
 
 
-# April 2023 1102
-minus_fifteen_years = whats_today - datetime.timedelta(days=1102 + 17)
+# May 2023 1132
+minus_fifteen_years = whats_today - datetime.timedelta(days=1132 + 2)
 
 
 whats_today = whats_today.strftime('%Y-%m-%d')
