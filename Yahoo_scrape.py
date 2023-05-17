@@ -9,7 +9,7 @@ whats_today = datetime.datetime.now().date()
 
 
 # May 2023 1132
-minus_fifteen_years = whats_today - datetime.timedelta(days=1132 + 9)
+minus_fifteen_years = whats_today - datetime.timedelta(days=1132 + 15)
 
 
 whats_today = whats_today.strftime('%Y-%m-%d')

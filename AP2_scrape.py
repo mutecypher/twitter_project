@@ -40,10 +40,10 @@ def get_them_tweets(src_wd_1, src_wd_2, num_hrs, num_tweets):
     for i in range(num_hrs):
         time.sleep(0.5)
         strt_date = datetime.datetime.now() - datetime.timedelta(hours=i)
-        ##strt_date = strt_date - datetime.timedelta(days=1)
+        ##strt_date = strt_date - datetime.timedelta(days=2)
         # print("the start date is ", strt_date)
         stp_date = datetime.datetime.now() - datetime.timedelta(hours=i+1)
-        ##stp_date = stp_date - datetime.timedelta(days=1)
+        ##stp_date = stp_date - datetime.timedelta(days=2)
         client = tweepy.Client(bearer_token=my_bearer_token)
         search_words = src_wd_1
 
