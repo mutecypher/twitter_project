@@ -132,7 +132,7 @@ print("the shape of the Amazon_2_agged_df redone is ", try2.shape)
 print("the tail of the Amazon_2_agged_df redone is ", try2.tail())
 
 
-file3 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_norm.csv'
+file3 = '/Volumes/Elements/GitHub/twitter-project/Data_Files/Amazon_tn_scored.csv'
 
 df = pd.read_csv(file3, header='infer')
 print()

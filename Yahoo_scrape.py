@@ -9,7 +9,7 @@ whats_today = datetime.datetime.now().date()
 
 
 # May 2023 1132
-minus_fifteen_years = whats_today - datetime.timedelta(days=1132 + 20)
+minus_fifteen_years = whats_today - datetime.timedelta(days=1132 + 25)
 
 
 whats_today = whats_today.strftime('%Y-%m-%d')
@@ -204,7 +204,7 @@ for stawk in stawkz:
                                                       time_interval='daily')
 
     namez[i] = pd.DataFrame(data[stawk]['prices'])
-    namez[i] = namez[i].drop('date', axis=1)
+    ##namez[i] = namez[i].drop('date', axis=1)
 
 # print("the head of sp500 is \n", sp500_df.head())
 
