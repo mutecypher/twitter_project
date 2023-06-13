@@ -241,17 +241,17 @@ df15 = pd.read_csv(file15, header='infer')
 print()
 try13 = comb_and_agg(df13)
 try13.to_csv(
-    '/Volumes/Elements/GitHub/twitter-project/Data_Files//KMI_tn_norm_agged.csv')
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_norm_agged.csv')
 print("the shape of the KMI_tn_norm redone is ", try13.shape)
 
 print()
 try14 = comb_and_agg(df14)
 try14.to_csv(
-    '/Volumes/Elements/GitHub/twitter-project/Data_Files//KMI_nn_scored_agged.csv')
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_nn_scored_agged.csv')
 print("the shape of the KMI_nn_scored redone is ", try14.shape)
 
 print()
 try15 = comb_and_agg(df15)
 try15.to_csv(
-    '/Volumes/Elements/GitHub/twitter-project/Data_Files//KMI_tn_scored_agged.csv')
+    '/Volumes/Elements/GitHub/twitter-project/Data_Files/KMI_tn_scored_agged.csv')
 print("the shape of the KMI_tn_scored redone is ", try15.shape)

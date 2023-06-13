@@ -8,9 +8,9 @@ import numpy as np
 whats_today = datetime.datetime.now().date()
 
 
-# May 2023 1132
-minus_fifteen_years = whats_today - datetime.timedelta(days=1132 + 25)
-
+# June 2023 1132
+minus_fifteen_years = whats_today - datetime.timedelta(days=1163 + 11)
+minus_fifteen_years = whats_today - datetime.timedelta(days=500)
 
 whats_today = whats_today.strftime('%Y-%m-%d')
 minus_fifteen_years = minus_fifteen_years.strftime('%Y-%m-%d')
@@ -27,8 +27,8 @@ i = 0
 for market in marketz:
     yahoo_financials = YahooFinancials(market)
 
-    data = yahoo_financials.get_historical_price_data(start_date=minus_fifteen_years,
-                                                      end_date=whats_today, time_interval='daily')
+    data = yahoo_financials.get_historical_price_data(start_date="2021-11-01",
+                                                      end_date="2023-06-11", time_interval='daily')
     print("got to here")
     namez[i] = pd.DataFrame(data[market]['prices'])
     namez[i] = namez[i].drop('date', axis=1)
@@ -199,9 +199,14 @@ for stawk in stawkz:
     yahoo_financials = YahooFinancials(stawk)
 
     print("/n The stawk I'm doing is ", stawk)
-    data = yahoo_financials.get_historical_price_data(start_date=minus_fifteen_years,
-                                                      end_date=whats_today,
-                                                      time_interval='daily')
+    print()
+    print("the start date is ", minus_fifteen_years)
+    print()
+    print("the end date is ", whats_today)
+    print()
+    data = yahoo_financials.get_historical_price_data(start_date="2021-11-01",
+                                                      end_date="2023-06-10",
+                                                      time_interval="daily")
 
     namez[i] = pd.DataFrame(data[stawk]['prices'])
     ##namez[i] = namez[i].drop('date', axis=1)
@@ -454,44 +459,81 @@ for stawk in stawkz:
 
 now = datetime.datetime.now()
 print("\n This finished at ", now)
+colz = ['meaningless', 'high', 'low', 'open','close','volume',
+        'adjclose','date','pct','rolling3',	'var3', 'covar3', 'beta3',
+        'var10', 'covar10',	'beta10',	
+        'beta3_clf', 'beta3_ndaq','beta3_djia','rolling1',
+        'beta10_clf', 'beta10_djia', 'beta10_ndaq',	
+        'rolling20', 'var20','covar20',	'beta20_clf','beta20_djia',	'beta20_ndaq',
+        'rolling30', 'var30','covar30',	'beta30_clf', 'beta30_djia', 'beta30_ndaq',
+        'rolling50', 'varfifty', 'covarfifty', 'betafifty',
+        'varqrtr',	'covarqrtr', 'betaqtr_clf',	'betaqtr_ndaq',	'betaqtr_djia',
+        'rolling250', 'varyear', 'covaryear',	
+        'betayr_clf', 'betayr_ndaq', 'betayr_djia']
+
 
 amzn_df = namez[0]
+amzn_df.columns = colz
+
 amzn_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/amzn_stock_df.csv", header=True)
+print()
+print("the head of amazon is: \n", amzn_df.loc[:,'date'].head())
+print()
+print("the tail of amazon is: \n", amzn_df.loc[:,'date'].tail())
+
 tsla_df = namez[1]
+tsla_df.columns = colz
 tsla_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/tsla_stock_df.csv", header=True)
 aapl_df = namez[2]
+aapl_df.columns = colz
 aapl_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/appl_stock_df.csv", header=True)
 evbg_df = namez[3]
+evbg_df.columns = colz
+
 evbg_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/evbg_stock_df.csv", header=True)
 kmi_df = namez[4]
+kmi_df.columns = colz
+
 kmi_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/kmi_stock_df.csv", header=True)
 shop_df = namez[5]
+
+shop_df.columns = colz
 shop_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/shop_stock_df.csv", header=True)
 gmed_df = namez[6]
+gmed_df.columns = colz
+
 gmed_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/gmed_stock_df.csv", header=True)
 sny_df = namez[7]
+sny_df.columns = colz
+
 sny_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/sny_stock_df.csv", header=True)
 mck_df = namez[8]
+mck_df.columns = colz
+
 mck_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/mck_stock_df.csv", header=True)
 et_df = namez[9]
+et_df.columns = colz
 et_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/et_stock_df.csv", header=True)
 insp_df = namez[10]
+insp_df.columns = colz
 insp_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/insp_stock_df.csv", header=True)
 crwd_df = namez[11]
+crwd_df.columns = colz
 crwd_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Filescrwd_stock_df.csv", header=True)
 clf_df = namez[12]
+clf_df.columns = colz
 clf_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/clf_stock_df.csv", header=True)
 UVXY_df = namez[12]
@@ -504,27 +546,7 @@ GBTC_df = namez[14]
 GBTC_df.to_csv(
     "/Volumes/Elements/GitHub/twitter-project/Data_Files/GBTC_etf_df.csv", header=True)
 
-# %%
-print(namez[0].head())
 
 
-time_now = datetime.datetime.now()
 
 
-print("the date and time is ", time_now)
-
-yahoo_financials = YahooFinancials('TB4WK')
-
-data = yahoo_financials.get_historical_price_data(start_date=minus_fifteen_years,
-                                                  end_date=whats_today,
-                                                  time_interval='daily')
-week_13_t_bill = pd.DataFrame(data['TB4WK'])
-
-
-print("/n The shape is ", week_13_t_bill.shape)
-
-
-week_13_t_bill = pd.DataFrame(data['TB4WK'])
-# week_13_t_bill = week_13_t_bill.drop('date', axis=1)
-
-print("/n The head is ", week_13_t_bill.shape)

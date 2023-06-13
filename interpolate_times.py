@@ -2,6 +2,13 @@ import pandas as pd
 import numpy as np
 import datetime
 
+from datetime import datetime
+
+# get current datetime
+dt = datetime.now()
+print('Datetime is:', dt)
+print('Weekday is:', dt.isoweekday())
+
 # Assuming TS1 and TS2 are pandas DataFrame objects with 'timestamp' and 'measurement' columns
 
 # Step 1: Find the day with the median number of measurements in TS1
