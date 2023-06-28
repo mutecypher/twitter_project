@@ -29,7 +29,7 @@ def count_files_in_folder(folder_path):
 dataset = ImageFolder(dataset_path, transform=transform)
 
 # Create the dataloader
-batch_size = 64
+batch_size = 4
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 print()
 print(f"Number of batches in the dataloader: {len(dataloader)}")
@@ -152,7 +152,7 @@ for epoch in range(num_epochs):
         d_loss.backward()
         optimizer_D.step()
 
-        save_image(generated_images.data[:25], f"/Volumes/Elements/GitHub/cats_with_birds/For_Training/gan_gened/gan_aug{epoch + 1}.jpg", nrow=5, normalize=True)
+        save_image(generated_images.data[:25], f"/Volumes/Elements/GitHub/cats_with_birds/For_Training/gan_gened/gcn_aug{epoch + 1}.jpg", nrow=5, normalize=True)
     # Save the model parameters at the end of each epoch
     torch.save(generator.state_dict(), '/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth')
     torch.save(discriminator.state_dict(), '/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth')
