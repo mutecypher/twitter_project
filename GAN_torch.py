@@ -7,6 +7,9 @@ from torchvision import transforms
 from torchvision.datasets import ImageFolder
 import glob
 
+print()
+print(torch.__version__)
+print()
 
 # Define the path to your image dataset
 dataset_path = '/Volumes/Elements/GitHub/cats_with_birds/For_Training/Fo_torch'
@@ -29,7 +32,7 @@ def count_files_in_folder(folder_path):
 dataset = ImageFolder(dataset_path, transform=transform)
 
 # Create the dataloader
-batch_size = 4
+batch_size = 8
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 print()
 print(f"Number of batches in the dataloader: {len(dataloader)}")
@@ -47,9 +50,9 @@ class Generator(nn.Module):
             nn.ReLU(),
             nn.Linear(1024, 2048),
             nn.SELU(),
-            nn.Linear(2048, 4096),
-            nn.ReLU(),
-            nn.Linear(4096, 256 * 256 * 3),
+      ##      nn.Linear(2048, 4096),
+       ##     nn.ReLU(),
+            nn.Linear(2048, 256 * 256 * 3),
             nn.Sigmoid()
         )
 
@@ -63,10 +66,12 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(256 * 256 * 3, 4096),
+            ##nn.Linear(256 * 256 * 3, 4096),
+            ##nn.SELU(),
+            ##nn.Linear(4096, 2048),
+           ## nn.ReLU(),
+            nn.Linear(256 * 256 * 3, 2048),
             nn.SELU(),
-            nn.Linear(4096, 2048),
-            nn.ReLU(),
             nn.Linear(2048, 1024),
             nn.SELU(),
             nn.Linear(1024, 512),
@@ -122,10 +127,11 @@ if not os.path.exists(discriminator_path):
 
 
 
-if os.path.exists(os.path.join(generator_path, 'generator.pth')) and os.path.exists(os.path.join(discriminator_path, 'descriminator.pth')):
+if os.path.exists('/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth') and os.path.exists('/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth'):
     # Load the saved model parameters
-    generator.load_state_dict(torch.load(os.path.join(generator_path, 'generator.pth')))
-    discriminator.load_state_dict(torch.load(os.path.join(discriminator_path, 'descriminator.pth')))
+    print("yes, path exists")
+    generator.load_state_dict(torch.load('/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth'))
+    discriminator.load_state_dict(torch.load('/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth'))
 
 # Training loop
 for epoch in range(num_epochs):
@@ -152,8 +158,25 @@ for epoch in range(num_epochs):
         d_loss.backward()
         optimizer_D.step()
 
-        save_image(generated_images.data[:25], f"/Volumes/Elements/GitHub/cats_with_birds/For_Training/gan_gened/gcn_aug{epoch + 1}.jpg", nrow=5, normalize=True)
-    # Save the model parameters at the end of each epoch
+        save_image(generated_images.data[:batch_size], f"/Volumes/Elements/GitHub/cats_with_birds/For_Training/gan_gened/gfn_aug{epoch + 1}.jpg", nrow=5, normalize=True)
+    
+    if os.path.exists('/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth'):
+    # Delete the file
+        os.remove('/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth')
+        print(f"The file '{'/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth'}' has been deleted.")
+    else:
+        print(f"The file '{'/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth'}' does not exist.")
+    
+    
+    if os.path.exists('/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth'):
+    # Delete the file
+        os.remove('/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth')
+        print(f"The file '{'/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth'}' has been deleted.")
+    else:
+        print(f"The file '{'/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth'}' does not exist.")
+    
+    
+       # Save the model parameters at the end of each epoch
     torch.save(generator.state_dict(), '/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth')
     torch.save(discriminator.state_dict(), '/Volumes/Elements/GitHub/cats_with_birds/Torchy/discriminator/descriminator.pth')
 
