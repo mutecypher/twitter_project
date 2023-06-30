@@ -32,7 +32,7 @@ def count_files_in_folder(folder_path):
 dataset = ImageFolder(dataset_path, transform=transform)
 
 # Create the dataloader
-batch_size = 8
+batch_size = 3
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 print()
 print(f"Number of batches in the dataloader: {len(dataloader)}")
@@ -95,8 +95,8 @@ generator = Generator(latent_dim).to(device)
 discriminator = Discriminator().to(device)
 
 criterion = nn.BCELoss()
-optimizer_G = optim.Adam(generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
-optimizer_D = optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+optimizer_G = optim.Adam(generator.parameters(), lr=0.0001, betas=(0.5, 0.999))
+optimizer_D = optim.Adam(discriminator.parameters(), lr=0.0001, betas=(0.5, 0.999))
 
 num_epochs = 200
 
@@ -158,7 +158,7 @@ for epoch in range(num_epochs):
         d_loss.backward()
         optimizer_D.step()
 
-        save_image(generated_images.data[:batch_size], f"/Volumes/Elements/GitHub/cats_with_birds/For_Training/gan_gened/gfn_aug{epoch + 1}.jpg", nrow=5, normalize=True)
+        save_image(generated_images.data[:batch_size], f"/Volumes/Elements/GitHub/cats_with_birds/For_Training/gan_gened/ghn_aug{epoch + 1}.jpg", nrow=5, normalize=True)
     
     if os.path.exists('/Volumes/Elements/GitHub/cats_with_birds/Torchy/generator/generator.pth'):
     # Delete the file
