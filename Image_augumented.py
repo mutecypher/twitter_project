@@ -5,7 +5,7 @@ import numpy as np
 
 
 # Set the path to your cat images
-cat_images_path = '/Volumes/Elements/GitHub/cats_with_birds/For_Training/brown_cat2'
+cat_images_path = '/Volumes/Elements/GitHub/cats_with_birds/For_Training/non_cat'
 
 # Create an ImageDataGenerator instance for data augmentation
 datagen = ImageDataGenerator(
@@ -47,7 +47,8 @@ def augment_images(images, save_path, save_prefix, save_format='jpg'):
         image_array = np.array(image)
         image_array = image_array.reshape((1,) + image_array.shape)  # Reshape to 4D array for generator
         original_name = os.path.splitext(image_name)[0]  # Extract the original filename without extension
-        k = 7
+        original_name = original_name.replace("_", "")  # Remove underscores from original filename
+        k = 17
         for j in range(k):
             augmented_name = f"{original_name}_{j}.{save_format}"
             save_file_path = os.path.join(save_path, augmented_name)
@@ -59,7 +60,7 @@ def augment_images(images, save_path, save_prefix, save_format='jpg'):
 # Load the cat images
 cat_images = load_images()
 
-augmented_images_path = '/Volumes/Elements/GitHub/cats_with_birds/For_Training/Augmented3'
+augmented_images_path = '/Volumes/Elements/GitHub/cats_with_birds/For_Training/Now_train/non_cats'
 
 # Perform data augmentation and save the augmented images
 cat_images = load_images()

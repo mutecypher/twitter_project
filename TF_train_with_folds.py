@@ -5,27 +5,25 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.model_selection import KFold
-
+from sklearn.model_selection import train_test_split
 
 image_height = 256
 image_width = 256
 batch_size = 32
-validation_split = 0.40
+validation_split = 0.3
 num_epochs = 40
-learning_rate = 0.0001
+learning_rate = 0.00003
 seedy = random.randint(100, 999)
-num_folds = 5
 
 # Define the CNN model
 model = tf.keras.Sequential([
     layers.Conv2D(32, (3, 3), activation='relu', input_shape=(image_height, image_width, 3)),
     layers.MaxPooling2D((2, 2)),
-    layers.Conv2D(32, (3, 3), activation='relu'),
+    layers.Conv2D(64, (3, 3), activation='relu'),
     layers.MaxPooling2D((2, 2)),
-    layers.Conv2D(16, (3, 3), activation='relu'),
+    layers.Conv2D(32, (3, 3), activation='relu'),
     layers.Flatten(),
-    layers.Dense(16, activation='relu'),
+    layers.Dense(32, activation='relu'),
     layers.Dense(3, activation='softmax')  # Three output classes: cats, mouthy cats, not cats
 ])
 
@@ -34,53 +32,46 @@ model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
               metrics=['accuracy'])
 
-
 # Preprocess and load the image data
-train_data = tf.keras.preprocessing.image_dataset_from_directory(
+image_data = tf.keras.preprocessing.image_dataset_from_directory(
     '/Volumes/Elements/GitHub/cats_with_birds/For_Training/Now_train',
     image_size=(image_height, image_width),
     batch_size=batch_size,
     validation_split=validation_split,
-    subset='training'
-   , seed = seedy
+    subset = 'training',
+    seed=seedy
 )
 
-validation_data = tf.keras.preprocessing.image_dataset_from_directory(
+# Split the data into training, validation, and test sets
+train_data = image_data
+val_data = tf.keras.preprocessing.image_dataset_from_directory(
     '/Volumes/Elements/GitHub/cats_with_birds/For_Training/Now_train',
     image_size=(image_height, image_width),
     batch_size=batch_size,
-    validation_split=validation_split * 0.75,
-    subset='validation'
-    , seed = seedy
+    validation_split=validation_split,
+    subset='validation',
+    seed=seedy
 )
 
 test_data = tf.keras.preprocessing.image_dataset_from_directory(
     '/Volumes/Elements/GitHub/cats_with_birds/For_Training/Now_train',
     image_size=(image_height, image_width),
     batch_size=batch_size,
-    validation_split=validation_split *0.25,
-    subset='validation',
-    shuffle = False
-    ,seed = seedy
+    validation_split=0.5,
+    subset = 'validation',
+    shuffle=False,
+    seed=seedy
 )
-
 
 # Train the model
 model.fit(
     train_data,
-    validation_data=validation_data,
+    validation_data=val_data,
     epochs=num_epochs
 )
 
-
 # Save the trained model
 model.save('/Volumes/Elements/GitHub/cats_with_birds/Torchy/model_tf')
-
-loss, accuracy = model.evaluate(test_data)
-print(f'Test loss: {loss:.4f}')
-print(f'Test accuracy: {accuracy:.4f}')
-
-
 
 # Load the saved model
 model = tf.keras.models.load_model('/Volumes/Elements/GitHub/cats_with_birds/Torchy/model_tf')
@@ -95,20 +86,21 @@ test_dataset = tf.keras.preprocessing.image_dataset_from_directory(
 
 # Extract the true labels from the dataset
 true_labels = []
-##for images, labels in test_dataset:
-for images, labels in test_data:
+for images, labels in test_dataset:
     true_labels.extend(labels.numpy())
 
 # Make predictions on the test dataset
-##predictions = model.predict(test_dataset)
-predictions = model.predict(test_data)
+predictions = model.predict(test_dataset)
 predicted_labels = np.argmax(predictions, axis=1)
 
 # Compute the confusion matrix
 cm = confusion_matrix(true_labels, predicted_labels)
 
 # Plot the confusion matrix as a heatmap
-categories = ["cat", "cat in mouth", "not cat"]
+categories = ["cat", "cat in mouth", "not a cat"]
+
+
+# Plot the confusion matrix with counts
 plt.figure(figsize=(8, 6))
 sns.heatmap(cm, annot=True, cmap="Blues", xticklabels=categories, yticklabels=categories)
 plt.xlabel('Predicted Labels')
@@ -116,8 +108,18 @@ plt.ylabel('True Labels')
 plt.title('Confusion Matrix')
 plt.show()
 
+    # Plot the confusion matrix with percentages
+row_sums = cm.sum(axis=1, keepdims=True)
+cm_percent = cm / row_sums.astype(float) * 100
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues", xticklabels=categories, yticklabels=categories)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix (Percentages)')
+plt.show()
 
-
+fold += 1
+    
 def plot_confusion_matrix(confusion_matrix, labels):
     # Calculate row-wise sums
     row_sums = confusion_matrix.sum(axis=1, keepdims=True)

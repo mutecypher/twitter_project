@@ -20,7 +20,7 @@ class CNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.classifier = nn.Sequential(
-            nn.Linear(64 * 56 * 56, 64),
+            nn.Linear(64 * 64 * 64, 64),
             nn.ReLU(inplace=True),
             nn.Linear(64, 3)  # Three output classes: cats, mouthy cats, not cats
         )
@@ -38,12 +38,12 @@ learning_rate = 0.001
 
 # Preprocess the image data
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((256, 256)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize image data
 ])
 
-train_data = torchvision.datasets.ImageFolder(root='path/to/training/directory', transform=transform)
+train_data = torchvision.datasets.ImageFolder(root='/Volumes/Elements/GitHub/cats_with_birds/For_Training/Now_train', transform=transform)
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
 # Initialize the model
@@ -68,4 +68,4 @@ for epoch in range(num_epochs):
             print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{total_steps}], Loss: {loss.item():.4f}')
 
 # Save the trained model
-torch.save(model.state_dict(), 'path/to/save/model.pth')
+torch.save(model.state_dict(), '/Volumes/Elements/GitHub/cats_with_birds/Torchy/model_pytorch')
