@@ -10,9 +10,9 @@ from sklearn.model_selection import train_test_split
 image_height = 256
 image_width = 256
 batch_size = 32
-validation_split = 0.3
+validation_split = 0.4
 num_epochs = 40
-learning_rate = 0.00003
+learning_rate = 0.0001
 seedy = random.randint(100, 999)
 
 # Define the CNN model
@@ -116,7 +116,7 @@ sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues", xticklabels=categor
 plt.xlabel('Predicted Labels')
 plt.ylabel('True Labels')
 plt.title('Confusion Matrix (Percentages)')
-plt.show()
+plt.savefig('/Volumes/Elements/GitHub/cats_with_birds/Torchy/Confusion_Matrix_folds.png')
 
 fold += 1
     
@@ -133,7 +133,7 @@ def plot_confusion_matrix(confusion_matrix, labels):
     ax.set_xlabel("Predicted Labels")
     ax.set_ylabel("True Labels")
     plt.title("Confusion Matrix (Percentages)")
-    plt.show()
+    plt.savefig('/Volumes/Elements/GitHub/cats_with_birds/Torchy/Confusion_Matrix_folds_pct.png')
 
 
 labels = ["Cat", "Cat with Something in Mouth", "Not Cat"]
